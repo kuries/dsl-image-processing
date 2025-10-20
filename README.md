@@ -2,9 +2,9 @@
 
 apt update  
 apt install -y build-essential cmake git openjdk-17-jdk  
-curl -L -o /workspace/ImageDSL/build/antlr-4.13.0-complete.jar https://www.antlr.org/download/antlr-4.13.0-complete.jar  
+curl -L -o /workspace/dsl-image-processing/build/antlr-4.13.0-complete.jar https://www.antlr.org/download/antlr-4.13.0-complete.jar  
 
-cd ImageDSL  
+cd dsl-image-processing  
 mkdir build && cd build  
 cmake ..  
 cmake --build .    
