@@ -33,6 +33,23 @@ if (NOT EXISTS ${ANTLR_JAR})
     )
 endif()
 
+# =========================================
+# Find LLVM
+# =========================================
+find_package(LLVM REQUIRED CONFIG)
+
+# Print LLVM info (optional but useful)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "LLVM include dirs: ${LLVM_INCLUDE_DIRS}")
+message(STATUS "LLVM libraries: ${LLVM_LIBRARIES}")
+
+# =========================================
+# Include LLVM headers and definitions
+# =========================================
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
+
 # -----------------------------
 # Grammar and generated directory
 # -----------------------------
@@ -63,10 +80,21 @@ target_include_directories(image-dsl PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${GENERATED_DIR}
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+    ${LLVM_INCLUDE_DIRS}
+)
+
+llvm_map_components_to_libnames(llvm_libs
+    Core
+    IRReader
+    Support
+    TransformUtils
 )
 
 # Link ANTLR4 runtime
-target_link_libraries(image-dsl PRIVATE antlr4_static)
+target_link_libraries(image-dsl PRIVATE 
+    antlr4_static
+    ${llvm_libs}
+)
 # -----------------------------
 # Info
 # -----------------------------
