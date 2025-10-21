@@ -1,63 +1,26 @@
 grammar ImageLang;
 
-// --- Parser Rules ---
-
-program
-    : (statement SEMI)* EOF
-    ;
+program: statement+ EOF;
 
 statement
     : imageDecl
     | maskDecl
-    | assignStmt
-    | applyMaskStmt
-    | printStmt
+    | applyMask
+    | returnStmt
+    | ';' 
     ;
 
-imageDecl
-    : 'image' ID '=' array2D
-    ;
+imageDecl: 'image' ID '=' array2D ';';
+maskDecl: 'mask' ID '=' array2D ';';
 
-maskDecl
-    : 'mask' ID '=' array2D
-    ;
+applyMask: 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';';
 
-assignStmt
-    : ID '=' array2D
-    ;
+returnStmt: 'return' ID ';';
 
-applyMaskStmt
-    : 'apply_mask' '(' ID ',' ID ')'
-    ;
+array2D: '[' row (',' row)* ']';
+row: '[' INT (',' INT)* ']';
 
-printStmt
-    : 'print' '(' ID ')'
-    ;
+ID: [a-zA-Z_][a-zA-Z_0-9]*;
+INT: [0-9]+;
 
-array2D
-    : '[' rowList ']'
-    ;
-
-rowList
-    : row (',' row)*
-    ;
-
-row
-    : '[' numberList ']'
-    ;
-
-numberList
-    : NUMBER (',' NUMBER)*
-    ;
-
-// --- Lexer Rules ---
-
-ID          : [a-zA-Z_][a-zA-Z0-9_]* ;
-NUMBER      : [0-9]+ ;
-SEMI        : ';' ;
-WS          : [ \t\r\n]+ -> skip ;
-LBRACK      : '[' ;
-RBRACK      : ']' ;
-COMMA       : ',' ;
-LPAREN      : '(' ;
-RPAREN      : ')' ;
+WS: [ \t\r\n]+ -> skip;

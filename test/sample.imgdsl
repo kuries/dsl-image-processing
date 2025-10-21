@@ -10,5 +10,6 @@ mask m = [
   [0, 1, 0]
 ];
 
-apply_mask(img, m);
-print(img);
+apply_mask(img, m, x=1, y=1);
+
+return img;

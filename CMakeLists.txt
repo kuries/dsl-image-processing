@@ -101,3 +101,19 @@ target_link_libraries(image-dsl PRIVATE
 message(STATUS "ANTLR grammar: ${GRAMMAR_FILE}")
 message(STATUS "Generated sources dir: ${GENERATED_DIR}")
 message(STATUS "ANTLR runtime from: ${antlr4_runtime_SOURCE_DIR}")
+
+
+# -----------------------------
+# Suppress warnings, show only errors
+# -----------------------------
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(image-dsl PRIVATE -w)   # suppress all warnings
+elseif(MSVC)
+    target_compile_options(image-dsl PRIVATE /W0)  # suppress all warnings
+endif()
+
+target_compile_options(image-dsl PRIVATE
+    -w             # disable warnings
+    -fno-diagnostics-show-caret
+    -fno-diagnostics-show-option
+)
