@@ -6,21 +6,28 @@ statement
     : imageDecl
     | maskDecl
     | applyMask
-    | returnStmt
+    | saveStmt
     | ';' 
     ;
 
-imageDecl: 'image' ID '=' array2D ';';
+// ===== Image and Mask Declarations =====
+imageDecl: 'image' ID '=' loadExpr ';';
 maskDecl: 'mask' ID '=' array2D ';';
 
+// ===== Load and Save =====
+loadExpr: 'load' '(' STRING ')' ;        // e.g., load("path")
+saveStmt: ID '.' 'save' '(' STRING ')' ';'; // e.g., img.save("path")
+
+// ===== Mask application =====
 applyMask: 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';';
 
-returnStmt: 'return' ID ';';
-
+// ===== Arrays for masks =====
 array2D: '[' row (',' row)* ']';
 row: '[' INT (',' INT)* ']';
 
+// ===== Lexical rules =====
 ID: [a-zA-Z_][a-zA-Z_0-9]*;
 INT: [0-9]+;
+STRING: '"' (~["\r\n])* '"';
 
 WS: [ \t\r\n]+ -> skip;
