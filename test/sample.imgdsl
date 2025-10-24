@@ -1,11 +1,2 @@
-image img = load("input.png");
-
-mask m = [
-  [0,1,0],
-  [1,1,1],
-  [0,1,0]
-];
-
-apply_mask(img, m, x=1, y=1);
-
-img.save("output.png");
+image a = load("/workspace/dsl-image-processing/build/coala.jpg");
+a.save("/workspace/dsl-image-processing/build/output.jpg");

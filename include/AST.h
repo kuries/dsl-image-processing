@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "CodegenContext.h"
 
 using namespace std;
 
@@ -17,102 +18,103 @@ class ExprAST {
 public:
     virtual ~ExprAST() = default;
     virtual void print(int indent = 0) const = 0;
+    virtual llvm::Value *codegen() = 0;
 };
 
-/// Number literal, e.g. `5.0`
-class NumberExprAST : public ExprAST {
-    double Val;
+// /// Number literal, e.g. `5.0`
+// class NumberExprAST : public ExprAST {
+//     double Val;
 
-public:
-    NumberExprAST(double Val) : Val(Val) {}
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "NumberExprAST " << Val << "\n";
-    }
-};
+// public:
+//     NumberExprAST(double Val) : Val(Val) {}
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "NumberExprAST " << Val << "\n";
+//     }
+// };
 
-/// Variable reference, e.g. `x`
-class VariableExprAST : public ExprAST {
-    std::string Name;
+// /// Variable reference, e.g. `x`
+// class VariableExprAST : public ExprAST {
+//     std::string Name;
 
-public:
-    VariableExprAST(std::string Name) : Name(std::move(Name)) {}
-    const std::string &getName() const { return Name; }
+// public:
+//     VariableExprAST(std::string Name) : Name(std::move(Name)) {}
+//     const std::string &getName() const { return Name; }
 
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
-    }
-};
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
+//     }
+// };
 
-/// Binary operation, e.g. `a + b`
-class BinaryExprAST : public ExprAST {
-    char Op;
-    std::unique_ptr<ExprAST> LHS, RHS;
+// /// Binary operation, e.g. `a + b`
+// class BinaryExprAST : public ExprAST {
+//     char Op;
+//     std::unique_ptr<ExprAST> LHS, RHS;
 
-public:
-    BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
-        : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+// public:
+//     BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
+//         : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
-        LHS->print(indent + 2);
-        RHS->print(indent + 2);
-    }
-};
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
+//         LHS->print(indent + 2);
+//         RHS->print(indent + 2);
+//     }
+// };
 
-/// Array access, e.g. img[i][j]
-class ArrayAccessExprAST : public ExprAST {
-    std::string ArrayName;
-    std::unique_ptr<ExprAST> Index1, Index2;
+// /// Array access, e.g. img[i][j]
+// class ArrayAccessExprAST : public ExprAST {
+//     std::string ArrayName;
+//     std::unique_ptr<ExprAST> Index1, Index2;
 
-public:
-    ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2)
-        : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index2(std::move(Index2)) {}
+// public:
+//     ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2)
+//         : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index2(std::move(Index2)) {}
 
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "\n";
-        Index1->print(indent + 2);
-        Index2->print(indent + 2);
-    }
-};
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "\n";
+//         Index1->print(indent + 2);
+//         Index2->print(indent + 2);
+//     }
+// };
 
 
-/// Assignment: e.g. `output[i][j] = expr`
-class AssignExprAST : public ExprAST {
-    std::unique_ptr<ExprAST> LHS, RHS;
+// /// Assignment: e.g. `output[i][j] = expr`
+// class AssignExprAST : public ExprAST {
+//     std::unique_ptr<ExprAST> LHS, RHS;
 
-public:
-    AssignExprAST(std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
-        : LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+// public:
+//     AssignExprAST(std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
+//         : LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "AssignExprAST\n";
-        LHS->print(indent + 2);
-        RHS->print(indent + 2);
-    }
-};
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "AssignExprAST\n";
+//         LHS->print(indent + 2);
+//         RHS->print(indent + 2);
+//     }
+// };
 
-/// For loop: for i = start .. end { body }
-class ForExprAST : public ExprAST {
-    std::string VarName;
-    std::unique_ptr<ExprAST> Start, End;
-    std::vector<std::unique_ptr<ExprAST>> Body;
+// /// For loop: for i = start .. end { body }
+// class ForExprAST : public ExprAST {
+//     std::string VarName;
+//     std::unique_ptr<ExprAST> Start, End;
+//     std::vector<std::unique_ptr<ExprAST>> Body;
 
-public:
-    ForExprAST(std::string VarName, std::unique_ptr<ExprAST> Start,
-               std::unique_ptr<ExprAST> End, std::vector<std::unique_ptr<ExprAST>> Body)
-        : VarName(std::move(VarName)), Start(std::move(Start)), End(std::move(End)), Body(std::move(Body)) {}
+// public:
+//     ForExprAST(std::string VarName, std::unique_ptr<ExprAST> Start,
+//                std::unique_ptr<ExprAST> End, std::vector<std::unique_ptr<ExprAST>> Body)
+//         : VarName(std::move(VarName)), Start(std::move(Start)), End(std::move(End)), Body(std::move(Body)) {}
 
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
-        std::cout << std::string(indent + 2, ' ') << "Start:\n";
-        Start->print(indent + 4);
-        std::cout << std::string(indent + 2, ' ') << "End:\n";
-        End->print(indent + 4);
-        std::cout << std::string(indent + 2, ' ') << "Body:\n";
-        for (auto &stmt : Body)
-            stmt->print(indent + 4);
-    }
-};
+//     void print(int indent = 0) const override {
+//         std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
+//         std::cout << std::string(indent + 2, ' ') << "Start:\n";
+//         Start->print(indent + 4);
+//         std::cout << std::string(indent + 2, ' ') << "End:\n";
+//         End->print(indent + 4);
+//         std::cout << std::string(indent + 2, ' ') << "Body:\n";
+//         for (auto &stmt : Body)
+//             stmt->print(indent + 4);
+//     }
+// };
 
 /// Represents an 'image' object declaration.
 class ImageDeclExprAST : public ExprAST {
@@ -129,6 +131,7 @@ public:
         if (InitExpr)
             InitExpr->print(indent + 2);
     }
+    llvm::Value *codegen();
 };
 
 /// Represents a 'mask' object declaration.
@@ -161,6 +164,7 @@ public:
     }
 
     const std::string &getPath() const { return Path; }
+    llvm::Value *codegen();
 };
 
 /// Represents store(path)
@@ -176,11 +180,23 @@ public:
         std::cout << std::string(indent, ' ')
                   << "StoreExprAST " << ImageName << " -> \"" << Path << "\"\n";
     }
+    llvm::Value *codegen();
 };
 
+struct ProgramAST : ExprAST {
+    std::vector<std::unique_ptr<ExprAST>> Statements;
 
+    void addStmt(std::unique_ptr<ExprAST> stmt) {
+        Statements.push_back(std::move(stmt));
+    }
 
-
+    void print(int indent = 0) const override {
+        std::cout << "ProgramAST:\n";
+        for (const auto &stmt : Statements)
+            stmt->print(indent + 2);
+    }
+    llvm::Value *codegen();
+};
 
 // struct IRImageDecl : IRNode {
 //     std::string id;
@@ -233,20 +249,20 @@ public:
 
 
 // IR Program (sequence of statements)
-using IRProgram = std::vector<std::unique_ptr<IRNode>>;
+// using IRProgram = std::vector<std::unique_ptr<IRNode>>;
 
-class IRPrinter {
-public:
-    static void print(const IRProgram& program, int indent = 0) {
-        std::cout << std::string(indent, ' ') << "=== IR Program (" 
-                  << program.size() << " statements) ===\n";
+// class IRPrinter {
+// public:
+//     static void print(const IRProgram& program, int indent = 0) {
+//         std::cout << std::string(indent, ' ') << "=== IR Program (" 
+//                   << program.size() << " statements) ===\n";
 
-        int index = 0;
-        for (const auto& node : program) {
-            std::cout << std::string(indent + 2, ' ') << "[" << index++ << "] ";
-            node->print(indent + 2);
-        }
+//         int index = 0;
+//         for (const auto& node : program) {
+//             std::cout << std::string(indent + 2, ' ') << "[" << index++ << "] ";
+//             node->print(indent + 2);
+//         }
 
-        std::cout << std::string(indent, ' ') << "===============================\n";
-    }
-};
+//         std::cout << std::string(indent, ' ') << "===============================\n";
+//     }
+// };

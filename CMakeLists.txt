@@ -49,6 +49,12 @@ message(STATUS "LLVM libraries: ${LLVM_LIBRARIES}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+# =========================================
+# Find OpenCV
+# =========================================
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # -----------------------------
 # Grammar and generated directory
@@ -81,19 +87,34 @@ target_include_directories(image-dsl PRIVATE
     ${GENERATED_DIR}
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
     ${LLVM_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 llvm_map_components_to_libnames(llvm_libs
-    Core
-    IRReader
-    Support
-    TransformUtils
+    Core            # Core LLVM IR classes
+    IRReader        # For parsing .ll / .bc IR files
+    Support         # Utilities, command-line, etc.
+    TransformUtils  # Transformation helpers
+    Analysis        # For passes or IR analysis
+    ExecutionEngine # For JIT or running IR in-memory
+    Interpreter     # If you plan to interpret IR directly
+    MC              # Machine code layer (needed by JIT)
+    MCJIT           # JIT engine
+    native          # Native target support
+    OrcJIT
+    Target
+    
 )
+
+add_library(runtime SHARED src/ImageRuntime.cpp)
+target_include_directories(runtime PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(runtime PUBLIC ${OpenCV_LIBS})
 
 # Link ANTLR4 runtime
 target_link_libraries(image-dsl PRIVATE 
     antlr4_static
     ${llvm_libs}
+    ${OpenCV_LIBS}
 )
 # -----------------------------
 # Info

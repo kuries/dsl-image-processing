@@ -1,8 +1,17 @@
+
 #pragma once
 #include <vector>
 #include <string>
 #include <iostream>
 #include <unordered_map>
+
+extern "C" {
+    // Loads image from path, returns opaque pointer to image (runtime owns the type).
+    void* load_image(const char* path);
+
+    // Saves image (opaque pointer) to path.
+    void  save_image(void* image, const char* path);
+}
 
 struct Image {
     std::vector<std::vector<int>> pixels;

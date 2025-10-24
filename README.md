@@ -2,6 +2,7 @@
 
 apt update
 apt install -y build-essential cmake git openjdk-17-jdk
+apt install libopencv-dev
 curl -L -o /workspace/ImageDSL/build/antlr-4.13.0-complete.jar https://www.antlr.org/download/antlr-4.13.0-complete.jar
 
 cd ImageDSL
