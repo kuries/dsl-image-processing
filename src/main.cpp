@@ -73,10 +73,7 @@ int main(int argc, const char* argv[])
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
-
-    // // Allow JIT to see runtime symbols like load_image/save_image
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-
+    
     llvm::sys::DynamicLibrary::LoadLibraryPermanently("libruntime.so");
     auto JITOrErr = llvm::orc::LLJITBuilder().create();
     if (!JITOrErr) {
@@ -87,24 +84,12 @@ int main(int argc, const char* argv[])
     // This defines the JIT variable
     auto JIT = std::move(*JITOrErr);
 
-//    auto &JD = JIT->getMainJITDylib();
-//     llvm::orc::MangleAndInterner Mangle(JIT->getExecutionSession(), JIT->getDataLayout());
-
-//     // Register runtime functions using absoluteSymbols
-// llvm::orc::SymbolMap symbols;
-
-// symbols[Mangle("load_image")] = llvm::JITEvaluatedSymbol(
-//     llvm::pointerToJITTargetAddress(&load_image),
-//     llvm::JITSymbolFlags::Exported
-// );
-
-// symbols[Mangle("save_image")] = llvm::JITEvaluatedSymbol(
-//     llvm::pointerToJITTargetAddress(&save_image),
-//     llvm::JITSymbolFlags::Exported
-// );
-
-// JD.define(llvm::orc::absoluteSymbols(std::move(symbols)));
-
+    // Allow JIT to see runtime symbols like load_image/save_image
+    if (llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr)) 
+    {
+        std::cerr << "Failed to load current process symbols!\n";
+    }
+   
 
     //Load DSL from stream
     std::ifstream stream(argv[1]);
@@ -135,9 +120,41 @@ int main(int argc, const char* argv[])
     auto TheContextPtr = std::make_unique<llvm::LLVMContext>();
     auto TSM = llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContextPtr));
 
+    auto generator = cantFail(
+        llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+            JIT->getDataLayout().getGlobalPrefix()
+        )
+    );
+
+    JIT->getMainJITDylib().addGenerator(std::move(generator));
+
     if (auto err = JIT->addIRModule(std::move(TSM))) {
         llvm::errs() << "Failed to add module to JIT\n";
         return 1;
     }
 
+    auto sym = JIT->lookup("load_image");
+    if (!sym) {
+        llvm::errs() << "Symbol 'load_image' not found in JIT\n";
+    }
+
+    auto mainSym = JIT->lookup("main");
+    if (!mainSym) {
+        llvm::errs() << "JIT lookup failed for main\n";
+        return 1;
+    }
+
+    using MainFnType = int (*)();
+
+    // Convert ExecutorAddr to function pointer
+    auto addr = mainSym->toPtr<MainFnType>();
+    if (!addr) {
+        llvm::errs() << "Failed to convert symbol to function pointer\n";
+        return 1;
+    }
+
+    std::cout << "[JIT] Executing compiled IR...\n";
+    int result = addr();
+    std::cout << "[JIT] Execution finished with code " << result << "\n";
+    
 }

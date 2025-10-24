@@ -106,6 +106,9 @@ llvm_map_components_to_libnames(llvm_libs
     
 )
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+
+
 add_library(runtime SHARED src/ImageRuntime.cpp)
 target_include_directories(runtime PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(runtime PUBLIC ${OpenCV_LIBS})

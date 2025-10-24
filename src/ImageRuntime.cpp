@@ -19,7 +19,13 @@ extern "C" void* load_image(const char* path) {
 
 
 extern "C" void save_image(void* image, const char* path) {
-    if (!image) return;
+    if (!image) 
+    {
+        std::cout << "Unable to save image to : " << path <<"\n Image obj is null";
+        return;
+    }
     cv::Mat* mat = static_cast<cv::Mat*>(image);
     cv::imwrite(path, *mat);
+
+    std::cout << "Saved image to : " << path;
 }
