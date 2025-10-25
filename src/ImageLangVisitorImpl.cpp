@@ -24,7 +24,6 @@ llvm::Value *LoadExprAST::codegen() {
 }
 
 
-
 llvm::Value *ImageDeclExprAST::codegen() {
   	llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
 
@@ -52,11 +51,11 @@ llvm::Value *StoreExprAST::codegen() {
         return nullptr;
     }
 	llvm::Value *imgHandle = Builder.CreateLoad(it->second->getAllocatedType(), it->second, ImageName.c_str());
+	// llvm::Value *imgHandle = it->second;
     llvm::Value *pathValue = Builder.CreateGlobalStringPtr(Path, "save_path");
     Builder.CreateCall(saveFunc, { imgHandle, pathValue });
     return nullptr;
 }
-
 
 
 llvm::Value *ProgramAST::codegen() {
@@ -71,6 +70,65 @@ llvm::Value *ProgramAST::codegen() {
     Builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(TheContext), 0));
 
     return MainFunc;
+}
+
+//Primary Expressions
+
+llvm::Value *NumberExprAST::codegen() {
+  return llvm::ConstantFP::get(TheContext, llvm::APFloat(Val));
+}
+
+llvm::Value *VariableExprAST::codegen() {
+  // Look this variable up in the function.
+  llvm::AllocaInst *A = NamedValues[Name];
+  if (!A)
+    return Helper::LogErrorV("Unknown variable name");
+
+  // Load the value.
+  return Builder.CreateLoad(A->getAllocatedType(), A, Name.c_str());
+}
+
+llvm::Value *BinaryExprAST::codegen() {
+	// Special case '=' because we don't want to emit the LHS as an expression.
+	if (Op == '=') {
+		// Assignment requires the LHS to be an identifier.
+		VariableExprAST *LHSE = static_cast<VariableExprAST *>(LHS.get());
+		if (!LHSE)
+			return Helper::LogErrorV("destination of '=' must be a variable");
+			
+		// Codegen the RHS.
+		llvm::Value *Val = RHS->codegen();
+		if (!Val)
+			return nullptr;
+
+		// Look up the name.
+		llvm::Value *Variable = NamedValues[LHSE->getName()];
+		if (!Variable)
+			return Helper::LogErrorV("Unknown variable name");
+
+		Builder.CreateStore(Val, Variable);
+		return Val;
+	}
+
+	llvm::Value *L = LHS->codegen();
+	llvm::Value *R = RHS->codegen();
+	if (!L || !R)
+		return nullptr;
+
+	switch (Op) {
+		case '+':
+			return Builder.CreateFAdd(L, R, "addtmp");
+		case '-':
+			return Builder.CreateFSub(L, R, "subtmp");
+		case '*':
+			return Builder.CreateFMul(L, R, "multmp");
+		case '<':
+			L = Builder.CreateFCmpULT(L, R, "cmptmp");
+			// Convert bool 0/1 to double 0.0 or 1.0
+			return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext), "booltmp");
+		default:
+			break;
+		}
 }
 
 // llvm::Value *IfExprAST::codegen() {

@@ -30,6 +30,7 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "NumberExprAST " << Val << "\n";
     }
+    llvm::Value *codegen() override;
 };
 
 // /// Variable reference, e.g. `x`
@@ -43,6 +44,7 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
     }
+    llvm::Value *codegen() override;
 };
 
 // /// Binary operation, e.g. `a + b`
@@ -59,6 +61,7 @@ public:
         LHS->print(indent + 2);
         RHS->print(indent + 2);
     }
+    llvm::Value *codegen() override;
 };
 
 // /// Array access, e.g. img[i][j]

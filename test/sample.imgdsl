@@ -1,2 +1,2 @@
-image a = load("/workspace/dsl-image-processing/build/coala.jpg");
-a.save("/workspace/dsl-image-processing/build/output.jpg");
+image a = load("/root/data/samples/images/img.jpeg");
+a.save("/root/data/samples/images/img2.jpeg");

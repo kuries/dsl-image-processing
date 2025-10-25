@@ -24,4 +24,15 @@ class Helper{
             llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
             return TmpB.CreateAlloca(type, nullptr, VarName);
         }
+
+        /// LogError* - These are little helper functions for error handling.
+        static std::unique_ptr<ExprAST> LogError(const char *Str) {
+            fprintf(stderr, "Error: %s\n", Str);
+            return nullptr;
+        }
+
+        static llvm::Value *LogErrorV(const char *Str) {
+            LogError(Str);
+            return nullptr;
+        }
 };

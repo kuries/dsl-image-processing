@@ -25,7 +25,6 @@ extern "C" Image* load_image(const char* path) {
 }
 
 extern "C" void save_image(Image* img, const char* path) {
-    std::cout<<"Reached here";
     if (!img || !img->data) {
         std::cerr << "[ImageRuntime] save_image: null or empty image\n";
         return;
