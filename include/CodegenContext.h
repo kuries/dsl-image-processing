@@ -9,6 +9,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/DerivedTypes.h"
 #include <map>
 #include <memory>
 #include <string>
@@ -24,5 +25,7 @@ extern std::map<std::string, llvm::Value*> NamedValues;
 llvm::Function* getRuntimeFunction(const std::string &name,
                                    llvm::Type *retType,
                                    const std::vector<llvm::Type*> &args);
+
+llvm::StructType *getImageStructType();
 
 #endif // CODEGEN_CONTEXT_H

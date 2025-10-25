@@ -11,8 +11,8 @@
 using namespace std;
 
 // Global tables for runtime images and masks
-extern std::unordered_map<std::string, Image> imageTable;
-extern std::unordered_map<std::string, Mask> maskTable;
+// extern std::unordered_map<std::string, Image> imageTable;
+// extern std::unordered_map<std::string, Mask> maskTable;
 
 // // Visitor class
 // class ImageLangVisitorImpl : public ImageLangBaseVisitor {

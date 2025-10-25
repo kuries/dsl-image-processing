@@ -17,6 +17,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(antlr4_runtime)
 
+
 # Build ANTLR runtime library
 add_subdirectory(${antlr4_runtime_SOURCE_DIR}/runtime/Cpp)
 
@@ -32,6 +33,19 @@ if (NOT EXISTS ${ANTLR_JAR})
         SHOW_PROGRESS
     )
 endif()
+
+
+# -----------------------------
+# Fetch STBI
+# -----------------------------
+
+
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(stb)
 
 # =========================================
 # Find LLVM
@@ -88,6 +102,7 @@ target_include_directories(image-dsl PRIVATE
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
     ${LLVM_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${stb_SOURCE_DIR}
 )
 
 llvm_map_components_to_libnames(llvm_libs
@@ -110,7 +125,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 
 
 add_library(runtime SHARED src/ImageRuntime.cpp)
-target_include_directories(runtime PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(runtime PUBLIC ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${stb_SOURCE_DIR})
 target_link_libraries(runtime PUBLIC ${OpenCV_LIBS})
 
 # Link ANTLR4 runtime
