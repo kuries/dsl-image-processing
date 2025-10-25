@@ -1,7 +1,7 @@
 #include "antlr4-runtime.h"
 #include "ImageLangLexer.h"
 #include "ImageLangParser.h"
-#include "ImageLangVisitorImpl.h"   // ✅ include the visitor header
+#include "ImageLangVisitorImpl.h"   
 #include "ImageRuntime.h"
 #include "AST.h"
 #include <fstream>
