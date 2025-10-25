@@ -44,3 +44,23 @@ extern "C" void free_image(Image* img) {
         delete img;
     }
 }
+
+extern "C" int get_image_height(Image* img) {
+    if (!img || !img->data) {
+        std::cerr << "[ImageRuntime] get_image_height: null or empty image\n";
+        return -1;
+    }
+    int height = img->height;
+    std::cout << "[ImageRuntime] Succesfully fetched image height " << height << std::endl;
+    return height;
+}
+
+extern "C" int get_image_width(Image* img) {
+    if (!img || !img->data) {
+        std::cerr << "[ImageRuntime] get_image_width: null or empty image\n";
+        return -1;
+    }
+    int width = img->width;
+    std::cout << "[ImageRuntime] Succesfully fetched image width " << width << std::endl;
+    return width;
+}

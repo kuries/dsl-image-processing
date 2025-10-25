@@ -18,9 +18,6 @@ class Helper{
             llvm::StringRef VarName, 
             llvm:: Type *type = llvm::Type::getDoubleTy(TheContext)
         ){
-            llvm::StructType *ImageTy = llvm::StructType::create(TheContext, "struct.Image");
-            llvm::PointerType *ImagePtrTy = llvm::PointerType::getUnqual(ImageTy);
-            type = ImagePtrTy;
             llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
             return TmpB.CreateAlloca(type, nullptr, VarName);
         }

@@ -25,15 +25,39 @@ llvm::Value *LoadExprAST::codegen() {
 
 
 llvm::Value *ImageDeclExprAST::codegen() {
+	auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
   	llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
 
     llvm::Value *initVal = InitExpr->codegen();
     if (!initVal) 
 		return nullptr;
 	
-	llvm::AllocaInst *Alloca = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), getImageStructType());
+	//Store image
+	llvm::AllocaInst *Alloca = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), ImagePtrTy);
 	Builder.CreateStore(initVal, Alloca);
     NamedValues[Name] = Alloca;
+
+	//Store image properties
+	llvm::Function *loadImageHeight =
+        getRuntimeFunction("get_image_height", llvm::Type::getInt8Ty(TheContext),
+                           { llvm::PointerType::get(TheContext, 0) });
+	llvm::Function *loadImageWidth =
+        getRuntimeFunction("get_image_width", llvm::Type::getInt8Ty(TheContext),
+                           { llvm::PointerType::get(TheContext, 0) });
+	
+						   
+	llvm::AllocaInst *AllocaH = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
+	llvm::AllocaInst *AllocaW = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
+
+	llvm::Value *height = Builder.CreateCall(loadImageHeight, { initVal }, "h");
+	llvm::Value *width = Builder.CreateCall(loadImageWidth, { initVal }, "w");
+
+	Builder.CreateStore(height, AllocaH);
+	NamedValues[Name+".height"] = AllocaH;
+
+	Builder.CreateStore(width, AllocaW);
+	NamedValues[Name+".width"] = AllocaW;
+
     return initVal;
 }
 
