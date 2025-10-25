@@ -22,44 +22,44 @@ public:
 };
 
 // /// Number literal, e.g. `5.0`
-// class NumberExprAST : public ExprAST {
-//     double Val;
+class NumberExprAST : public ExprAST {
+    double Val;
 
-// public:
-//     NumberExprAST(double Val) : Val(Val) {}
-//     void print(int indent = 0) const override {
-//         std::cout << std::string(indent, ' ') << "NumberExprAST " << Val << "\n";
-//     }
-// };
+public:
+    NumberExprAST(double Val) : Val(Val) {}
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "NumberExprAST " << Val << "\n";
+    }
+};
 
 // /// Variable reference, e.g. `x`
-// class VariableExprAST : public ExprAST {
-//     std::string Name;
+class VariableExprAST : public ExprAST {
+    std::string Name;
 
-// public:
-//     VariableExprAST(std::string Name) : Name(std::move(Name)) {}
-//     const std::string &getName() const { return Name; }
+public:
+    VariableExprAST(std::string Name) : Name(std::move(Name)) {}
+    const std::string &getName() const { return Name; }
 
-//     void print(int indent = 0) const override {
-//         std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
-//     }
-// };
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
+    }
+};
 
 // /// Binary operation, e.g. `a + b`
-// class BinaryExprAST : public ExprAST {
-//     char Op;
-//     std::unique_ptr<ExprAST> LHS, RHS;
+class BinaryExprAST : public ExprAST {
+    char Op;
+    std::unique_ptr<ExprAST> LHS, RHS;
 
-// public:
-//     BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
-//         : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+public:
+    BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
+        : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 
-//     void print(int indent = 0) const override {
-//         std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
-//         LHS->print(indent + 2);
-//         RHS->print(indent + 2);
-//     }
-// };
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
+        LHS->print(indent + 2);
+        RHS->print(indent + 2);
+    }
+};
 
 // /// Array access, e.g. img[i][j]
 // class ArrayAccessExprAST : public ExprAST {
@@ -93,28 +93,45 @@ public:
 //     }
 // };
 
-// /// For loop: for i = start .. end { body }
-// class ForExprAST : public ExprAST {
-//     std::string VarName;
-//     std::unique_ptr<ExprAST> Start, End;
-//     std::vector<std::unique_ptr<ExprAST>> Body;
+/// IfExprAST - Expression class for if/then/else.
+class IfExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> Cond;
+  std::vector<std::unique_ptr<ExprAST>> Then, Else;
 
-// public:
-//     ForExprAST(std::string VarName, std::unique_ptr<ExprAST> Start,
-//                std::unique_ptr<ExprAST> End, std::vector<std::unique_ptr<ExprAST>> Body)
-//         : VarName(std::move(VarName)), Start(std::move(Start)), End(std::move(End)), Body(std::move(Body)) {}
+public:
+  IfExprAST(std::unique_ptr<ExprAST> Cond, std::vector<std::unique_ptr<ExprAST>> Then,
+            std::vector<std::unique_ptr<ExprAST>> Else)
+      : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
 
-//     void print(int indent = 0) const override {
-//         std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
-//         std::cout << std::string(indent + 2, ' ') << "Start:\n";
-//         Start->print(indent + 4);
-//         std::cout << std::string(indent + 2, ' ') << "End:\n";
-//         End->print(indent + 4);
-//         std::cout << std::string(indent + 2, ' ') << "Body:\n";
-//         for (auto &stmt : Body)
-//             stmt->print(indent + 4);
-//     }
-// };
+    llvm::Value *codegen() override;
+};
+
+/// For loop: for i = start .. end { body }
+class ForExprAST : public ExprAST {
+    std::string VarName;
+    std::unique_ptr<ExprAST> Start, End, Step;
+    std::vector<std::unique_ptr<ExprAST>> Body;
+
+public:
+    ForExprAST(std::string VarName, std::unique_ptr<ExprAST> Start,
+               std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step, 
+               std::vector<std::unique_ptr<ExprAST>> Body)
+        : VarName(std::move(VarName)), Start(std::move(Start)), End(std::move(End)), Step(std::move(Step)), Body(std::move(Body)) {}
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
+        std::cout << std::string(indent + 2, ' ') << "Start:\n";
+        Start->print(indent + 4);
+        std::cout << std::string(indent + 2, ' ') << "End:\n";
+        End->print(indent + 4);
+        std::cout << std::string(indent + 2, ' ') << "Step:\n";
+        Step->print(indent + 4);
+        std::cout << std::string(indent + 2, ' ') << "Body:\n";
+        for (auto &stmt : Body)
+            stmt->print(indent + 4);
+    }
+    llvm::Value *codegen() override;
+};
 
 /// Represents an 'image' object declaration.
 class ImageDeclExprAST : public ExprAST {
