@@ -108,6 +108,8 @@ int main(int argc, const char* argv[])
     std::cout<<"Printing the Parse Tree : \n";
 
     programAST->print();
+    
+    getImageStructType();
 
     programAST->codegen();
     std::cout<<"\n--------------------------------------------------------------------\n";

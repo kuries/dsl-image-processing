@@ -7,20 +7,21 @@
 
 using namespace std;
 
+
 llvm::Value *LoadExprAST::codegen() {
-    llvm::PointerType  *i8PtrTy = llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(TheContext));
+    auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
 
-    // Create or get the function prototype
-    llvm::Function *loadFunc = getRuntimeFunction("load_image", i8PtrTy, { i8PtrTy });
+    // Declare or retrieve extern "C" function: Image* load_image(const char*)
+    llvm::Function *loadFunc =
+        getRuntimeFunction("load_image", ImagePtrTy,
+                           { llvm::PointerType::get(TheContext, 0) });
 
-    // Create global string for the path
     llvm::Value *pathValue = Builder.CreateGlobalStringPtr(Path, "path");
+    llvm::Value *imgHandle = Builder.CreateCall(loadFunc, { pathValue }, "img");
 
-    // Call load_image(path)
-    llvm::Value *result = Builder.CreateCall(loadFunc, { pathValue }, "img_handle");
-
-    return result; // i8* handle to the loaded image
+    return imgHandle;  // Image*
 }
+
 
 
 llvm::Value *ImageDeclExprAST::codegen() {
@@ -33,13 +34,15 @@ llvm::Value *ImageDeclExprAST::codegen() {
 
 
 llvm::Value *StoreExprAST::codegen() {
-    llvm::PointerType  *i8PtrTy = llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(TheContext));
-    llvm::Function *saveFunc = getRuntimeFunction("save_image", llvm::Type::getVoidTy(TheContext),
-                                                  { i8PtrTy, i8PtrTy });
+    auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
+
+    llvm::Function *saveFunc =
+        getRuntimeFunction("save_image", llvm::Type::getVoidTy(TheContext),
+                           { ImagePtrTy, llvm::PointerType::get(TheContext, 0) });
 
     auto it = NamedValues.find(ImageName);
     if (it == NamedValues.end()) {
-        std::cerr << "Unknown variable: " << ImageName << "\n";
+        std::cerr << "Unknown image variable: " << ImageName << "\n";
         return nullptr;
     }
 
@@ -49,6 +52,7 @@ llvm::Value *StoreExprAST::codegen() {
     Builder.CreateCall(saveFunc, { imgHandle, pathValue });
     return nullptr;
 }
+
 
 
 llvm::Value *ProgramAST::codegen() {

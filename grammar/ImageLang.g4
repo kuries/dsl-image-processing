@@ -7,7 +7,8 @@ statement
     | maskDecl
     | applyMask
     | saveStmt
-    | ';' 
+    | pixelAssign
+    | ';'
     ;
 
 // ===== Image and Mask Declarations =====
@@ -15,8 +16,14 @@ imageDecl: 'image' ID '=' loadExpr ';';
 maskDecl: 'mask' ID '=' array2D ';';
 
 // ===== Load and Save =====
-loadExpr: 'load' '(' STRING ')' ;        // e.g., load("path")
-saveStmt: ID '.' 'save' '(' STRING ')' ';'; // e.g., img.save("path")
+loadExpr: 'load' '(' STRING ')' ;
+saveStmt: ID '.' 'save' '(' STRING ')' ';';
+
+// ===== Pixel assignment =====
+// grayscale → only 2D indexing
+pixelAssign
+    : ID '[' INT ']' '[' INT ']' '=' INT ';'   // a[x][y] = 128;
+    ;
 
 // ===== Mask application =====
 applyMask: 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';';
