@@ -7,7 +7,7 @@
 llvm::LLVMContext TheContext;
 std::unique_ptr<llvm::Module> TheModule = std::make_unique<llvm::Module>("main", TheContext);
 llvm::IRBuilder<> Builder(TheContext);
-std::map<std::string, llvm::Value*> NamedValues;
+std::map<std::string, llvm::AllocaInst*> NamedValues;
 
 llvm::Function* getRuntimeFunction(const std::string &name, llvm::Type *retType,
                                    const std::vector<llvm::Type*> &args) {

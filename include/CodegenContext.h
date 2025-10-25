@@ -20,7 +20,7 @@ extern std::unique_ptr<llvm::Module> TheModule;
 extern llvm::IRBuilder<> Builder;
 
 // Symbol table for variable → Value*
-extern std::map<std::string, llvm::Value*> NamedValues;
+extern std::map<std::string, llvm::AllocaInst*> NamedValues;
 
 llvm::Function* getRuntimeFunction(const std::string &name,
                                    llvm::Type *retType,
