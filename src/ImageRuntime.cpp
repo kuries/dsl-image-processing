@@ -10,17 +10,18 @@ extern "C" Image* load_image(const char* path) {
     std::cout << "[ImageRuntime] Loading image: " << path << std::endl;
 
     Image* img = new Image();
-    img->data = stbi_load(path, &img->width, &img->height, &img->channels, 1);
+    int isGreyscale = 1;
+    img->data = stbi_load(path, &img->width, &img->height, &img->channels, isGreyscale);
+    if(isGreyscale)
+        img->channels=1;
 
     if (!img->data) {
         std::cerr << "[ImageRuntime] Failed to load image: " << path << std::endl;
         delete img;
         return nullptr;
     }
-
-    img->channels = 1;
     std::cout << "[ImageRuntime] Loaded grayscale image: "
-              << img->width << "x" << img->height << std::endl;
+              << img->width << "x" << img->height << "with channels: " << img->channels << std::endl;
     return img;
 }
 
@@ -55,6 +56,10 @@ extern "C" int get_image_height(Image* img) {
     return height;
 }
 
+extern "C" void printInt(int n) {
+    std::cout<<"Integer: "<<n<<'\n';
+}
+
 extern "C" int get_image_width(Image* img) {
     if (!img || !img->data) {
         std::cerr << "[ImageRuntime] get_image_width: null or empty image\n";
@@ -63,4 +68,14 @@ extern "C" int get_image_width(Image* img) {
     int width = img->width;
     std::cout << "[ImageRuntime] Succesfully fetched image width " << width << std::endl;
     return width;
+}
+
+extern "C" uint8_t* get_image_data(Image* img) {
+    if (!img || !img->data) {
+        std::cerr << "[ImageRuntime] get_image_data: null or empty image\n";
+        return nullptr;
+    }
+    uint8_t* data = img->data;
+    std::cout << "[ImageRuntime] Succesfully fetched image data " << std::endl;
+    return data;
 }

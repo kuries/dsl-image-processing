@@ -44,19 +44,36 @@ llvm::Value *ImageDeclExprAST::codegen() {
 	llvm::Function *loadImageWidth =
         getRuntimeFunction("get_image_width", llvm::Type::getInt8Ty(TheContext),
                            { llvm::PointerType::get(TheContext, 0) });
+	llvm::Function *loadImageData =
+        getRuntimeFunction("get_image_data", llvm::PointerType::get(TheContext, 0),
+                           { llvm::PointerType::get(TheContext, 0) });
 	
 						   
 	llvm::AllocaInst *AllocaH = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
 	llvm::AllocaInst *AllocaW = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
+	llvm::AllocaInst *AllocaD = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::PointerType::get(TheContext, 0));
 
 	llvm::Value *height = Builder.CreateCall(loadImageHeight, { initVal }, "h");
 	llvm::Value *width = Builder.CreateCall(loadImageWidth, { initVal }, "w");
+	llvm::Value *data = Builder.CreateCall(loadImageData, { initVal }, "imgdata");
 
 	Builder.CreateStore(height, AllocaH);
 	NamedValues[Name+".height"] = AllocaH;
 
 	Builder.CreateStore(width, AllocaW);
 	NamedValues[Name+".width"] = AllocaW;
+
+	llvm::Value *one = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(TheContext), 90);
+
+	// create: %17 = getelementptr inbounds i8, ptr %16, i64 1
+	llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(TheContext), data, one, "imgptr");
+
+	llvm::Value *loadedByte = Builder.CreateLoad(Builder.getInt8Ty(), gep, "loaded_byte");
+	
+	llvm::Function *printInt = getRuntimeFunction("printInt", llvm::Type::getInt8Ty(TheContext),
+                           { llvm::Type::getInt8Ty(TheContext) });
+
+	Builder.CreateCall(printInt, { loadedByte }, "print");
 
     return initVal;
 }

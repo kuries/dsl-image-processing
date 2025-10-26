@@ -16,10 +16,12 @@ extern "C" {
     };
 
     extern "C" {
-    Image* load_image(const char* path);
-    void save_image(Image* img, const char* path);
-    void free_image(Image* img);
-}
+        Image* load_image(const char* path);
+        void save_image(Image* img, const char* path);
+        void free_image(Image* img);
+        int get_image_height(Image* img);
+        int get_image_width(Image* img);
+    }
 }
 
 // struct Image {
