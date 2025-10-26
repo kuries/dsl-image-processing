@@ -1,2 +1,27 @@
-image a = load("/root/data/samples/images/img.jpeg");
-a.save("/root/data/samples/images/img2.jpeg");
+image input = load("/workspace/dsl-image-processing/build/panda_with_heart.jpg");
+
+input.save("/workspace/dsl-image-processing/build/output.jpg");
+
+mask blur = [[0, 1, 0],[1, 4, 1],[0, 1, 0]];
+
+int i1 = 10;
+int i2;
+int i3 = 5;
+
+input[0][1] = 5;
+
+blur[0][0] = i1;
+
+input[0][5] = i1 + i2 * i3;
+
+mask blur = [[0, 1, 0],[1, 4, 1],[0, 1, 0]];
+
+int i1 = 10;
+int i2;
+int i3 = 5;
+
+input[0][1] = 5;
+
+blur[0][0] = i1;
+
+input[0][5] = i1 + i2 * i3;

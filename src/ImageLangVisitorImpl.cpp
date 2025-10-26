@@ -24,6 +24,7 @@ llvm::Value *LoadExprAST::codegen() {
 }
 
 
+
 llvm::Value *ImageDeclExprAST::codegen() {
 	auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
   	llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
@@ -103,6 +104,7 @@ llvm::Value *StoreExprAST::codegen() {
 }
 
 
+
 llvm::Value *ProgramAST::codegen() {
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), false);
     llvm::Function *MainFunc = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", TheModule.get());
@@ -116,6 +118,87 @@ llvm::Value *ProgramAST::codegen() {
 
     return MainFunc;
 }
+
+llvm::Value *IfExprAST::codegen() {
+  llvm::Value *CondV = Cond->codegen();
+  if (!CondV)
+    return nullptr;
+
+//   // Convert condition to a bool by comparing non-equal to 0.0.
+//   CondV = Builder.CreateFCmpONE(
+//       CondV, llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0)), "ifcond");
+
+//   llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
+
+//   // Create blocks for the then and else cases.  Insert the 'then' block at the
+//   // end of the function.
+//   llvm::BasicBlock *ThenBB = llvm::BasicBlock::Create(TheContext, "then", TheFunction);
+//   llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(TheContext, "else");
+//   llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(TheContext, "ifcont");
+
+//   Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+
+//   // Emit then value.
+//   Builder.SetInsertPoint(ThenBB);
+
+//   llvm::Value *ThenV = Then->codegen();
+//   if (!ThenV)
+//     return nullptr;
+
+//   Builder.CreateBr(MergeBB);
+//   // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+//   ThenBB = Builder.GetInsertBlock();
+
+//   // Emit else block.
+//   TheFunction->insert(TheFunction->end(), ElseBB);
+//   Builder.SetInsertPoint(ElseBB);
+
+//   llvm::Value *ElseV = Else->codegen();
+//   if (!ElseV)
+//     return nullptr;
+
+//   Builder.CreateBr(MergeBB);
+//   // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+//   ElseBB = Builder.GetInsertBlock();
+
+//   // Emit merge block.
+//   TheFunction->insert(TheFunction->end(), MergeBB);
+//   Builder.SetInsertPoint(MergeBB);
+//   llvm::PHINode *PN = Builder.CreatePHI(llvm::Type::getDoubleTy(TheContext), 2, "iftmp");
+
+//   PN->addIncoming(ThenV, ThenBB);
+//   PN->addIncoming(ElseV, ElseBB);
+//   return PN;
+}
+
+llvm::Value* MaskDeclExprAST::codegen() {
+    // TODO: implement LLVM IR generation for mask
+    return nullptr;
+}
+
+// For ApplyMaskExprAST
+llvm::Value* ApplyMaskExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+
+llvm::Value* AssignExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+
+llvm::Value* VarDeclExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+llvm::Value* ArrayAccessExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
 
 //Primary Expressions
 

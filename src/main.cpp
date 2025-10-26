@@ -7,15 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/ExecutionEngine/Orc/LLJIT.h"
-#include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
-#include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-
-
 // Recursive pretty printer
 void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "", bool last = true) {
     std::cout << indent;
@@ -34,38 +25,6 @@ void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "
 
 
 }
-
-
-// int main(int argc, const char* argv[]) {
-//     if (argc < 2) {
-//         std::cerr << "Usage: image-dsl <file.imgdsl>\n";
-//         return 1;
-//     }
-
-//     std::ifstream stream(argv[1]);
-//     antlr4::ANTLRInputStream input(stream);
-//     ImageLangLexer lexer(&input);
-//     antlr4::CommonTokenStream tokens(&lexer);
-//     ImageLangParser parser(&tokens);
-
-//     antlr4::tree::ParseTree *tree = parser.program();
-//     printParseTree(tree);
-    
-//     // ImageLangVisitorImpl visitor;
-//     // visitor.visit(tree);
-
-//     // ImageLangParser::ProgramContext* programCtx = parser.program();
-
-//     // ASTBuilderVisitor builder;
-//     // auto ASTProgram = builder.build(programCtx);
-
-//     // std::cout << "IR generated with " << ASTProgram->size() << " statements.\n";
-
-//     // IRPrinter::print(*ASTProgram);
-
-//     return 0;
-// }
-
 
 int main(int argc, const char* argv[])
 {

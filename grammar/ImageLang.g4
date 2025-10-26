@@ -1,40 +1,101 @@
 grammar ImageLang;
 
-program: statement+ EOF;
+// ===== Entry Point =====
+program
+    : statement+ EOF
+    ;
 
+// ===== Statements =====
 statement
     : imageDecl
     | maskDecl
-    | applyMask
     | saveStmt
     | pixelAssign
+    | intDecl
+    | intAssign
+    | applyMask
     | ';'
     ;
 
 // ===== Image and Mask Declarations =====
-imageDecl: 'image' ID '=' loadExpr ';';
-maskDecl: 'mask' ID '=' array2D ';';
+imageDecl
+    : 'image' ID '=' loadExpr ';'
+    ;
+
+maskDecl
+    : 'mask' ID '=' array2D ';'
+    ;
 
 // ===== Load and Save =====
-loadExpr: 'load' '(' STRING ')' ;
-saveStmt: ID '.' 'save' '(' STRING ')' ';';
+loadExpr
+    : 'load' '(' STRING ')'
+    ;
+
+saveStmt
+    : ID '.' 'save' '(' STRING ')' ';'
+    ;
 
 // ===== Pixel assignment =====
-// grayscale → only 2D indexing
 pixelAssign
-    : ID '[' INT ']' '[' INT ']' '=' INT ';'   // a[x][y] = 128;
+    : ID '[' expr ']' '[' expr ']' '=' expr ';'
+    ;
+
+// ===== Integer variable declarations =====
+intDecl
+    : 'int' ID ('=' expr)? ';'
+    ;
+
+// ===== Integer assignments =====
+intAssign
+    : ID '=' expr ';'
     ;
 
 // ===== Mask application =====
-applyMask: 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';';
+applyMask
+    : 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';'
+    ;
+
+// ===== Expressions (with precedence) =====
+expr
+    : addExpr
+    ;
+
+addExpr
+    : mulExpr (('+' | '-') mulExpr)*
+    ;
+
+mulExpr
+    : primary (('*' | '/') primary)*
+    ;
+
+primary
+    : INT
+    | ID
+    | '(' expr ')'
+    ;
 
 // ===== Arrays for masks =====
-array2D: '[' row (',' row)* ']';
-row: '[' INT (',' INT)* ']';
+array2D
+    : '[' row (',' row)* ']'
+    ;
 
-// ===== Lexical rules =====
-ID: [a-zA-Z_][a-zA-Z_0-9]*;
-INT: [0-9]+;
-STRING: '"' (~["\r\n])* '"';
+row
+    : '[' INT (',' INT)* ']'
+    ;
 
-WS: [ \t\r\n]+ -> skip;
+// ===== Lexical Rules =====
+ID
+    : [a-zA-Z_][a-zA-Z_0-9]*
+    ;
+
+INT
+    : [0-9]+
+    ;
+
+STRING
+    : '"' (~["\r\n])* '"'
+    ;
+
+WS
+    : [ \t\r\n]+ -> skip
+    ;
