@@ -1,3 +1,14 @@
+set(ENV{GIT_TERMINAL_PROMPT} 1)
+set(ENV{GIT_CURL_VERBOSE} 1)
+set(ENV{GIT_HTTPS_PROXY} "")
+set(ENV{GIT_SSH_COMMAND} "ssh -o ConnectTimeout=60")
+
+# Extend Git timeout for FetchContent
+set(ENV{GIT_HTTP_LOW_SPEED_LIMIT} 0)
+set(ENV{GIT_HTTP_LOW_SPEED_TIME} 999999)
+set(ENV{GIT_HTTP_CONNECT_TIMEOUT} 120)
+
+
 cmake_minimum_required(VERSION 3.10)
 project(ImageDSL LANGUAGES CXX)
 

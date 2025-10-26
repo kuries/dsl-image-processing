@@ -19,6 +19,8 @@ llvm::Value *LoadExprAST::codegen() {
     llvm::Value *pathValue = Builder.CreateGlobalStringPtr(Path, "path");
     llvm::Value *imgHandle = Builder.CreateCall(loadFunc, { pathValue }, "img");
 
+
+
     return imgHandle;  // Image*
 }
 
@@ -120,3 +122,47 @@ llvm::Value *IfExprAST::codegen() {
 //   PN->addIncoming(ElseV, ElseBB);
 //   return PN;
 }
+
+
+llvm::Value* NumberExprAST::codegen() {
+    // TODO: implement LLVM IR generation for mask
+    return nullptr;
+}
+
+llvm::Value* MaskDeclExprAST::codegen() {
+    // TODO: implement LLVM IR generation for mask
+    return nullptr;
+}
+
+// For ApplyMaskExprAST
+llvm::Value* ApplyMaskExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+
+llvm::Value* AssignExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+llvm::Value* BinaryExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+llvm::Value* VariableExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+llvm::Value* VarDeclExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
+llvm::Value* ArrayAccessExprAST::codegen() {
+    // TODO: implement codegen
+    return nullptr;
+}
+
