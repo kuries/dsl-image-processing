@@ -57,23 +57,27 @@ llvm::Value *ImageDeclExprAST::codegen() {
 	llvm::Value *width = Builder.CreateCall(loadImageWidth, { initVal }, "w");
 	llvm::Value *data = Builder.CreateCall(loadImageData, { initVal }, "imgdata");
 
+	Builder.CreateStore(data, AllocaD);
+	NamedValues[Name+".data"] = AllocaD;
+
 	Builder.CreateStore(height, AllocaH);
 	NamedValues[Name+".height"] = AllocaH;
 
 	Builder.CreateStore(width, AllocaW);
 	NamedValues[Name+".width"] = AllocaW;
 
-	llvm::Value *one = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(TheContext), 90);
-
-	// create: %17 = getelementptr inbounds i8, ptr %16, i64 1
-	llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(TheContext), data, one, "imgptr");
-
-	llvm::Value *loadedByte = Builder.CreateLoad(Builder.getInt8Ty(), gep, "loaded_byte");
+	//Example
+	// llvm::Function *printInt = getRuntimeFunction("printInt", llvm::Type::getInt8Ty(TheContext),
+    //                        { llvm::Type::getInt8Ty(TheContext) });
 	
-	llvm::Function *printInt = getRuntimeFunction("printInt", llvm::Type::getInt8Ty(TheContext),
-                           { llvm::Type::getInt8Ty(TheContext) });
+	// llvm::Value* v = Helper::GEPLoad(data, 2);
+	// Builder.CreateCall(printInt, { v }, "print");
 
-	Builder.CreateCall(printInt, { loadedByte }, "print");
+	// llvm::Value *valueToStore = llvm::ConstantInt::get(llvm::Type::getInt32Ty(TheContext), 55);
+	// Helper::GEPStore(data, 2, valueToStore);
+
+	// llvm::Value* g = Helper::GEPLoad(data, 2);
+	// Builder.CreateCall(printInt, { g }, "print");
 
     return initVal;
 }

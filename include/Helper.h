@@ -22,6 +22,24 @@ class Helper{
             return TmpB.CreateAlloca(type, nullptr, VarName);
         }
 
+        static llvm::Value* GetGEP(llvm::Value *array, int index){
+            llvm::Value *idx = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(TheContext), index);
+            llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(TheContext), array, idx, "img_ptr");
+            return gep;
+        }
+
+        static llvm::Value* GEPLoad(llvm::Value *array, int index){
+            llvm::Value *gep = GetGEP(array, index);
+	        llvm::Value *loaded_byte = Builder.CreateLoad(Builder.getInt8Ty(), gep, "loaded_byte");
+            return loaded_byte;
+        }
+
+        static llvm::Value* GEPStore(llvm::Value *array, int index, llvm::Value *val){
+            llvm::Value *gep = GetGEP(array, index);
+	        llvm::Value *store_inst = Builder.CreateStore(val, gep, "loaded_byte");
+            return store_inst;
+        }
+
         /// LogError* - These are little helper functions for error handling.
         static std::unique_ptr<ExprAST> LogError(const char *Str) {
             fprintf(stderr, "Error: %s\n", Str);
