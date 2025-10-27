@@ -87,6 +87,7 @@ class ArrayAccessExprAST : public ExprAST {
 public:
     ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2)
         : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index2(std::move(Index2)) {}
+    const std::string &getName() const { return ArrayName; }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "[]";

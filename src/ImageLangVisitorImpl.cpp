@@ -23,8 +23,6 @@ llvm::Value *LoadExprAST::codegen() {
     return imgHandle;  // Image*
 }
 
-
-
 llvm::Value *ImageDeclExprAST::codegen() {
 	auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
   	llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
@@ -185,13 +183,20 @@ llvm::Value* ApplyMaskExprAST::codegen() {
 
 llvm::Value* AssignExprAST::codegen() {
     // TODO: implement codegen
-    return nullptr;
-}
+	std::string lhsName;
+	if (VariableExprAST *LHSE = static_cast<VariableExprAST *>(LHS.get())) 
+		lhsName = LHSE->getName();
+	else if (ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get()))  
+		lhsName = LHSE->getName();
+	else
+		return Helper::LogErrorV("destination of '=' must be a variable");
+	
+	llvm::Value* lhsAlloc = NamedValues[lhsName];
+	llvm::Value *rhs = RHS->codegen();
 
+	Helper::printInt(rhs);
 
-llvm::Value* VarDeclExprAST::codegen() {
-    // TODO: implement codegen
-    return nullptr;
+    return Builder.CreateStore(rhs, lhsAlloc);
 }
 
 llvm::Value* ArrayAccessExprAST::codegen() {
@@ -214,6 +219,20 @@ llvm::Value *VariableExprAST::codegen() {
 
   // Load the value.
   return Builder.CreateLoad(A->getAllocatedType(), A, Name.c_str());
+}
+
+llvm::Value *VarDeclExprAST::codegen() {
+	llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
+	
+	llvm::AllocaInst *Alloca = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getDoubleTy(TheContext));
+	NamedValues[Name] = Alloca;
+
+	// Store the value.
+	if(InitExpr != nullptr){
+		llvm::Value *val = InitExpr->codegen();
+		Builder.CreateStore(val, Alloca);
+	}
+	return nullptr;
 }
 
 llvm::Value *BinaryExprAST::codegen() {

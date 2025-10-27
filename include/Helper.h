@@ -40,6 +40,12 @@ class Helper{
             return store_inst;
         }
 
+        static void printInt(llvm::Value *val){
+            llvm::Function *printInt = getRuntimeFunction("printInt", llvm::Type::getVoidTy(TheContext),
+						{ llvm::Type::getDoubleTy(TheContext) });
+	        Builder.CreateCall(printInt, { val }, "print");
+        }
+
         /// LogError* - These are little helper functions for error handling.
         static std::unique_ptr<ExprAST> LogError(const char *Str) {
             fprintf(stderr, "Error: %s\n", Str);
