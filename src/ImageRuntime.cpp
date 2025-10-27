@@ -46,7 +46,7 @@ extern "C" void free_image(Image* img) {
     }
 }
 
-extern "C" int get_image_height(Image* img) {
+extern "C" double get_image_height(Image* img) {
     if (!img || !img->data) {
         std::cerr << "[ImageRuntime] get_image_height: null or empty image\n";
         return -1;
@@ -60,7 +60,7 @@ extern "C" void printInt(double n) {
     std::cout<<"Integer: "<<n<<'\n';
 }
 
-extern "C" int get_image_width(Image* img) {
+extern "C" double get_image_width(Image* img) {
     if (!img || !img->data) {
         std::cerr << "[ImageRuntime] get_image_width: null or empty image\n";
         return -1;

@@ -55,6 +55,7 @@ class VariableExprAST : public ExprAST {
 public:
     VariableExprAST(std::string Name) : Name(std::move(Name)) {}
     const std::string &getName() const { return Name; }
+    const std::string &getTypeStr() const { return "VariableExprAST"; }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
@@ -82,12 +83,13 @@ public:
 // Array access, e.g. img[i][j]
 class ArrayAccessExprAST : public ExprAST {
     std::string ArrayName;
-    std::unique_ptr<ExprAST> Index1, Index2;
-
+    
 public:
+    std::unique_ptr<ExprAST> Index1, Index2;
     ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2)
         : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index2(std::move(Index2)) {}
     const std::string &getName() const { return ArrayName; }
+    const std::string &getTypeStr() const { return "ArrayAccessExprAST"; }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "[]";
@@ -110,7 +112,7 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << "\n ";
         LHS->print(indent + 2) ;
-        std::cout << "\n";
+        std::cout << "=";
         RHS->print(indent + 2);
     }
 

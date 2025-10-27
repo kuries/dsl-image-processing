@@ -22,22 +22,38 @@ class Helper{
             return TmpB.CreateAlloca(type, nullptr, VarName);
         }
 
-        static llvm::Value* GetGEP(llvm::Value *array, int index){
-            llvm::Value *idx = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(TheContext), index);
+        static llvm::Value* GetGEP(llvm::Value *array, llvm::Value* index){
+            //todo
+            llvm::Value *idx = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(TheContext), 1);
             llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(TheContext), array, idx, "img_ptr");
             return gep;
-        }
+        }   
 
-        static llvm::Value* GEPLoad(llvm::Value *array, int index){
+        static llvm::Value* GEPLoad(llvm::Value *array, llvm::Value* index){
             llvm::Value *gep = GetGEP(array, index);
 	        llvm::Value *loaded_byte = Builder.CreateLoad(Builder.getInt8Ty(), gep, "loaded_byte");
             return loaded_byte;
         }
 
-        static llvm::Value* GEPStore(llvm::Value *array, int index, llvm::Value *val){
+        static llvm::Value* GEPStore(llvm::Value *array, llvm::Value* index, llvm::Value *val){
             llvm::Value *gep = GetGEP(array, index);
 	        llvm::Value *store_inst = Builder.CreateStore(val, gep, "loaded_byte");
             return store_inst;
+        }
+
+        static llvm::Value* ComputeIndex(std::string ArrayName, llvm::Value* i, llvm::Value* j){
+            llvm::AllocaInst *heightA = NamedValues[ArrayName+".height"];
+	        llvm::AllocaInst *widthA = NamedValues[ArrayName+".width"];
+
+            llvm::Value *h = Builder.CreateLoad(heightA->getAllocatedType(), heightA, ArrayName+".height");
+            llvm::Value *w = Builder.CreateLoad(widthA->getAllocatedType(), widthA, ArrayName+".width");
+            Helper::printInt(h);
+            Helper::printInt(w);
+
+            llvm::Value *rowOffset = Builder.CreateMul(i, w, "rowOffset");
+            // Compute i * width + j
+            llvm::Value *index1D = Builder.CreateAdd(rowOffset, j, "index1D");
+            return index1D;
         }
 
         static void printInt(llvm::Value *val){

@@ -38,18 +38,18 @@ llvm::Value *ImageDeclExprAST::codegen() {
 
 	//Store image properties
 	llvm::Function *loadImageHeight =
-        getRuntimeFunction("get_image_height", llvm::Type::getInt8Ty(TheContext),
+        getRuntimeFunction("get_image_height", llvm::Type::getDoubleTy(TheContext),
                            { llvm::PointerType::get(TheContext, 0) });
 	llvm::Function *loadImageWidth =
-        getRuntimeFunction("get_image_width", llvm::Type::getInt8Ty(TheContext),
+        getRuntimeFunction("get_image_width", llvm::Type::getDoubleTy(TheContext),
                            { llvm::PointerType::get(TheContext, 0) });
 	llvm::Function *loadImageData =
         getRuntimeFunction("get_image_data", llvm::PointerType::get(TheContext, 0),
                            { llvm::PointerType::get(TheContext, 0) });
 	
 						   
-	llvm::AllocaInst *AllocaH = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
-	llvm::AllocaInst *AllocaW = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getInt8Ty(TheContext));
+	llvm::AllocaInst *AllocaH = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getDoubleTy(TheContext));
+	llvm::AllocaInst *AllocaW = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::Type::getDoubleTy(TheContext));
 	llvm::AllocaInst *AllocaD = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), llvm::PointerType::get(TheContext, 0));
 
 	llvm::Value *height = Builder.CreateCall(loadImageHeight, { initVal }, "h");
@@ -184,24 +184,65 @@ llvm::Value* ApplyMaskExprAST::codegen() {
 llvm::Value* AssignExprAST::codegen() {
     // TODO: implement codegen
 	std::string lhsName;
-	if (VariableExprAST *LHSE = static_cast<VariableExprAST *>(LHS.get())) 
+	VariableExprAST *LHSEVar = static_cast<VariableExprAST *>(LHS.get());
+	// if (LHSEVar->getTypeStr() == "VariableExprAST")
+	//ToDo
+	if (true)
+	{
+		lhsName = LHSEVar->getName();
+		llvm::Value* lhsAlloc = NamedValues[lhsName];
+		llvm::Value *rhs = RHS->codegen();
+
+		//
+		// ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get());
+		// llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
+		// llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");
+
+		// llvm::Value *i = LHSE->Index1->codegen();
+		// llvm::Value *j = LHSE->Index2->codegen();
+		// llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
+		// Helper::printInt(index1D);
+		// Helper::GEPStore(imageData, index1D, rhs);
+		//
+
+		Helper::printInt(rhs);
+
+		return Builder.CreateStore(rhs, lhsAlloc);
+	}
+	else if (LHSEVar->getTypeStr() == "ArrayAccessExprAST") 
+	{
+		ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get());
 		lhsName = LHSE->getName();
-	else if (ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get()))  
-		lhsName = LHSE->getName();
+		llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
+		llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");
+
+		llvm::Value *i = LHSE->Index1->codegen();
+		llvm::Value *j = LHSE->Index2->codegen();
+		llvm::Value *rhs = RHS->codegen();
+
+		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
+		return Helper::GEPStore(imageData, index1D, rhs);
+		// llvm::Value* t = Helper::GEPLoad(imageData, index1D);
+		// Helper::printInt(index1D);
+	}
 	else
 		return Helper::LogErrorV("destination of '=' must be a variable");
 	
-	llvm::Value* lhsAlloc = NamedValues[lhsName];
-	llvm::Value *rhs = RHS->codegen();
-
-	Helper::printInt(rhs);
-
-    return Builder.CreateStore(rhs, lhsAlloc);
+	return nullptr;
 }
 
 llvm::Value* ArrayAccessExprAST::codegen() {
     // TODO: implement codegen
-    return nullptr;
+	llvm::AllocaInst *imgDataA = NamedValues[ArrayName+".data"];
+	llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, ArrayName+".data");
+
+	llvm::Value *i = Index1->codegen();
+	llvm::Value *j = Index2->codegen();
+
+	llvm::Value* index1D = Helper::ComputeIndex(ArrayName, i, j);
+	Helper::printInt(index1D);
+
+	return Helper::GEPLoad(imageData, index1D);
 }
 
 
