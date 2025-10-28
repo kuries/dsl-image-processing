@@ -204,16 +204,33 @@ private:
     }
 
 
-    std::unique_ptr<ExprAST> buildPrimary(ImageLangParser::PrimaryContext *ctx) 
+    std::unique_ptr<ExprAST> buildPrimary(ImageLangParser::PrimaryContext *ctx)
     {
+        // Case 1: Integer literal
         if (ctx->INT())
             return std::make_unique<NumberExprAST>(std::stoi(ctx->INT()->getText()));
+
+        // Case 2: Pixel access like img[x][y]
+        if (ctx->ID() && ctx->expr().size() == 2)
+        {
+            std::string imageName = ctx->ID()->getText();
+            auto xExpr = buildExpr(ctx->expr(0));  // first index
+            auto yExpr = buildExpr(ctx->expr(1));  // second index
+
+            return std::make_unique<ArrayAccessExprAST>(imageName, std::move(xExpr), std::move(yExpr));
+        }
+
+        // Case 3: Simple variable
         if (ctx->ID())
             return std::make_unique<VariableExprAST>(ctx->ID()->getText());
-        if (ctx->expr())
-            return buildExpr(ctx->expr());
+
+        // Case 4: Parenthesized expression
+        if (ctx->expr(0))
+            return buildExpr(ctx->expr(0));
+
         return nullptr;
     }
+
 
     std::unique_ptr<ExprAST> buildImageDecl(ImageLangParser::ImageDeclContext *ctx) {
         std::string name = ctx->ID()->getText();

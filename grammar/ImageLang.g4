@@ -78,6 +78,7 @@ primary
     : INT
     | ID
     | '(' expr ')'
+    | ID '[' expr ']' '[' expr ']'
     ;
 
 // ===== Arrays for masks =====
