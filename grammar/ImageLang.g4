@@ -8,12 +8,10 @@ program
 // ===== Statements =====
 statement
     : imageDecl
-    | maskDecl
     | saveStmt
     | pixelAssign
-    | intDecl
-    | intAssign
-    | applyMask
+    | numDecl
+    | numAssign
     | applyThreshold
     | applyBoxBlur
     | ';'
@@ -22,10 +20,6 @@ statement
 // ===== Image and Mask Declarations =====
 imageDecl
     : 'image' ID '=' loadExpr ';'
-    ;
-
-maskDecl
-    : 'mask' ID '=' array2D ';'
     ;
 
 // ===== Load and Save =====
@@ -42,20 +36,16 @@ pixelAssign
     : ID '[' expr ']' '[' expr ']' '=' expr ';'
     ;
 
-// ===== Integer variable declarations =====
-intDecl
-    : 'int' ID ('=' expr)? ';'
+// ===== Numeric variable declarations =====
+numDecl
+    : 'num' ID ('=' expr)? ';'
     ;
 
-// ===== Integer assignments =====
-intAssign
+// ===== Numeric assignments =====
+numAssign
     : ID '=' expr ';'
     ;
 
-// ===== Mask application =====
-applyMask
-    : 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';'
-    ;
 
 // ===== Threshold application =====
 applyThreshold
@@ -81,7 +71,7 @@ mulExpr
     ;
 
 primary
-    : INT
+    : NUM_LITERAL
     | ID
     | '(' expr ')'
     | ID '[' expr ']' '[' expr ']'
@@ -93,7 +83,7 @@ array2D
     ;
 
 row
-    : '[' INT (',' INT)* ']'
+    : '[' NUM_LITERAL (',' NUM_LITERAL)* ']'
     ;
 
 // ===== Lexical Rules =====
@@ -101,8 +91,10 @@ ID
     : [a-zA-Z_][a-zA-Z_0-9]*
     ;
 
-INT
-    : [0-9]+
+// Numbers: integers and floats (like 42, 3.14, .5, 1., 1e3, 2.5E-2)
+NUM_LITERAL
+    : [0-9]+ ('.' [0-9]*)? ([eE] [+-]? [0-9]+)?
+    | '.' [0-9]+ ([eE] [+-]? [0-9]+)?
     ;
 
 STRING

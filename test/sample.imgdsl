@@ -2,18 +2,14 @@ image input = load("/workspace/dsl-image-processing/build/panda_with_heart.jpg")
 
 input.save("/workspace/dsl-image-processing/build/output.jpg");
 
-//int i1 = input[0][1];
-int i2;
-int i3 = 5;
+num i1 = input[0][1];
+num i2;
+num i3 = 5.3;
 
-//input[0][1] = 5;
+input[0][1] = 5;
 
-//blur[0][0] = i1;
+input[0][5] = i1 + i2 * i3;
 
-//input[0][5] = i1 + i2 * i3;
+apply_threshold(input, 100.3, 50.999);
 
-//mask blur = [[0, 1, 0],[1, 4, 1],[0, 1, 0]];
-
-//apply_threshold(input, 100, 50);
-
-//apply_boxblur(input, 3);
+apply_boxblur(input, 3);

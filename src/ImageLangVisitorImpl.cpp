@@ -169,17 +169,6 @@ llvm::Value *IfExprAST::codegen() {
 //   return PN;
 }
 
-llvm::Value* MaskDeclExprAST::codegen() {
-    // TODO: implement LLVM IR generation for mask
-    return nullptr;
-}
-
-// For ApplyMaskExprAST
-llvm::Value* ApplyMaskExprAST::codegen() {
-    // TODO: implement codegen
-    return nullptr;
-}
-
 
 llvm::Value* AssignExprAST::codegen() {
     // TODO: implement codegen

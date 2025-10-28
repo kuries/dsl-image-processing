@@ -28,12 +28,10 @@ private:
     std::unique_ptr<ExprAST> buildStatement(ImageLangParser::StatementContext *ctx) 
     {
         if (ctx->imageDecl())           return buildImageDecl(ctx->imageDecl());
-        if (ctx->maskDecl())            return buildMaskDecl(ctx->maskDecl());
         if (ctx->saveStmt())            return buildSaveStmt(ctx->saveStmt());
         if (ctx->pixelAssign())         return buildPixelAssign(ctx->pixelAssign());
-        if (ctx->applyMask())           return buildApplyMask(ctx->applyMask());
-        if (ctx->intDecl())             return buildIntDecl(ctx->intDecl());
-        if (ctx->intAssign())           return buildIntAssign(ctx->intAssign());
+        if (ctx->numDecl())             return buildNumDecl(ctx->numDecl());
+        if (ctx->numAssign())           return buildNumAssign(ctx->numAssign());
         if (ctx->applyThreshold())      return buildApplyThreshold(ctx->applyThreshold());
         if (ctx->applyBoxBlur())        return buildApplyBoxBlur(ctx->applyBoxBlur());
         
@@ -41,7 +39,7 @@ private:
         return nullptr;
     }
 
-    std::unique_ptr<ExprAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
+    std::unique_ptr<ProgramAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -288,7 +286,7 @@ private:
 
 
 
-    std::unique_ptr<ExprAST> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
+    std::unique_ptr<ProgramAST> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -428,7 +426,7 @@ private:
         return lhs;
     }
 
-    std::unique_ptr<ExprAST> buildIntDecl(ImageLangParser::IntDeclContext *ctx) 
+    std::unique_ptr<ExprAST> buildNumDecl(ImageLangParser::NumDeclContext *ctx) 
     {
         std::string name = ctx->ID()->getText();
         std::unique_ptr<ExprAST> initExpr = nullptr;
@@ -440,7 +438,7 @@ private:
         return std::make_unique<VarDeclExprAST>(name, std::move(initExpr));
     }
 
-    std::unique_ptr<ExprAST> buildIntAssign(ImageLangParser::IntAssignContext *ctx) 
+    std::unique_ptr<ExprAST> buildNumAssign(ImageLangParser::NumAssignContext *ctx) 
     {
         // Build LHS as a VariableExprAST
         auto lhs = std::make_unique<VariableExprAST>(ctx->ID()->getText());
@@ -456,8 +454,11 @@ private:
     std::unique_ptr<ExprAST> buildPrimary(ImageLangParser::PrimaryContext *ctx)
     {
         // Case 1: Integer literal
-        if (ctx->INT())
-            return std::make_unique<NumberExprAST>(std::stoi(ctx->INT()->getText()));
+        if (ctx->NUM_LITERAL())
+        {
+            double val = std::stod(ctx->NUM_LITERAL()->getText());
+            return std::make_unique<NumberExprAST>(val);
+        }
 
         // Case 2: Pixel access like img[x][y]
         if (ctx->ID() && ctx->expr().size() == 2)
@@ -514,33 +515,6 @@ private:
         // Assignment node
         return std::make_unique<AssignExprAST>(std::move(lhs), std::move(valueExpr));
     }
-
-    std::unique_ptr<ExprAST> buildMaskDecl(ImageLangParser::MaskDeclContext *ctx) {
-        std::string name = ctx->ID()->getText();
-    std::vector<std::vector<int>> data;
-
-    for (auto rowCtx : ctx->array2D()->row()) {
-        std::vector<int> row;
-        for (auto intCtx : rowCtx->INT()) {
-            row.push_back(std::stoi(intCtx->getText()));
-        }
-        data.push_back(std::move(row));
-    }
-
-    return std::make_unique<MaskDeclExprAST>(name, std::move(data), data.size(), data.size() == 0 ? 0 : data[0].size());
-    }
-
-
-    // -----------------------------
-    // Apply mask
-    std::unique_ptr<ExprAST> buildApplyMask(ImageLangParser::ApplyMaskContext *ctx) {
-        std::string imageName = ctx->ID(0)->getText();
-        std::string maskName = ctx->ID(1)->getText();
-        int offsetX = std::stoi(ctx->INT(0)->getText());
-        int offsetY = std::stoi(ctx->INT(1)->getText());
-        return std::make_unique<ApplyMaskExprAST>(imageName, maskName, offsetX, offsetY);
-    }
-
 
     static std::string stripQuotes(const std::string &s) {
         if (s.size() >= 2 && s.front() == '"' && s.back() == '"')

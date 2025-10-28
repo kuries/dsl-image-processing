@@ -278,59 +278,6 @@ public:
     llvm::Value *codegen();
 };
 
-class MaskDeclExprAST : public ExprAST {
-    std::string Name;
-    int Width = 0;
-    int Height = 0;
-    std::vector<std::vector<int>> Values;
-
-public:
-    MaskDeclExprAST(std::string Name, std::vector<std::vector<int>> Values, int height, int width)
-        : Name(std::move(Name)), Values(std::move(Values)), Height(height), Width(width)
-    {  }
-
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ')
-                  << "MaskDeclExprAST " << Name 
-                  << " (" << Width << "x" << Height << ")\n";
-        for (auto &row : Values) {
-            std::cout << std::string(indent + 2, ' ') << "[ ";
-            for (auto val : row)
-                std::cout << val << " ";
-            std::cout << "]\n";
-        }
-    }
-
-    const std::string& getName() const { return Name; }
-    int getWidth() const { return Width; }
-    int getHeight() const { return Height; }
-    const std::vector<std::vector<int>>& getValues() const { return Values; }
-
-    llvm::Value *codegen() override; // implement later
-};
-
-
-
-// Apply mask: apply_mask(img, mask, x=INT, y=INT)
-class ApplyMaskExprAST : public ExprAST {
-    std::string ImageName;
-    std::string MaskName;
-    int OffsetX, OffsetY;
-
-public:
-    ApplyMaskExprAST(std::string ImageName, std::string MaskName, int OffsetX, int OffsetY)
-        : ImageName(std::move(ImageName)), MaskName(std::move(MaskName)), OffsetX(OffsetX), OffsetY(OffsetY) {}
-
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ')
-                  << "ApplyMaskExprAST " << MaskName << " -> " << ImageName
-                  << " (x=" << OffsetX << ", y=" << OffsetY << ")\n";
-    }
-
-    llvm::Value* codegen() override;  // implement later
-};
-
-
 
 /// Represents load("path")
 class LoadExprAST : public ExprAST {
