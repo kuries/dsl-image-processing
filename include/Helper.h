@@ -73,7 +73,6 @@ class Helper{
 
             llvm::Value *h = Builder.CreateLoad(heightA->getAllocatedType(), heightA, ArrayName+".height");
             llvm::Value *w = Builder.CreateLoad(widthA->getAllocatedType(), widthA, ArrayName+".width");
-
             llvm::Value *rowOffset = Builder.CreateMul(i, w, "rowOffset");
             // Compute i * width + j
             llvm::Value *index1D = Builder.CreateAdd(rowOffset, j, "index1D");

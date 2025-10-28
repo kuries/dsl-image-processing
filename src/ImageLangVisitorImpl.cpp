@@ -171,36 +171,24 @@ llvm::Value *IfExprAST::codegen() {
 
 
 llvm::Value* AssignExprAST::codegen() {
-    // TODO: implement codegen
 	std::string lhsName;
-	VariableExprAST *LHSEVar = static_cast<VariableExprAST *>(LHS.get());
-	// if (LHSEVar->getTypeStr() == "VariableExprAST")
-	//ToDo
-	if (true)
+
+	if (VariableExprAST *LHSEVar = dynamic_cast<VariableExprAST *>(LHS.get()))
 	{
+		cout<<"Variable\n";
 		lhsName = LHSEVar->getName();
 		llvm::Value* lhsAlloc = NamedValues[lhsName];
 		llvm::Value *rhs = RHS->codegen();
 
-		//
-		// ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get());
-		// llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
-		// llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");
-
-		// llvm::Value *i = LHSE->Index1->codegen();
-		// llvm::Value *j = LHSE->Index2->codegen();
-		// llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
-		// Helper::printInt(index1D);
-		// Helper::GEPStore(imageData, index1D, rhs);
-		//
-
-		// Helper::printDouble(rhs);
+		Helper::printDouble(rhs);
 
 		return Builder.CreateStore(rhs, lhsAlloc);
 	}
-	else if (LHSEVar->getTypeStr() == "ArrayAccessExprAST") 
+	else if (ArrayAccessExprAST *LHSEArr = dynamic_cast<ArrayAccessExprAST *>(LHS.get())) 
 	{
+		cout<<"Array\n";
 		ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get());
+		llvm::Value* lhsAlloc = NamedValues[LHSE->getName()];
 		lhsName = LHSE->getName();
 		llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
 		llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");
@@ -210,12 +198,12 @@ llvm::Value* AssignExprAST::codegen() {
 		llvm::Value *rhs = RHS->codegen();
 
 		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
-		return Helper::GEPStore(imageData, index1D, rhs);
-		// llvm::Value* t = Helper::GEPLoad(imageData, index1D);
-		// Helper::printInt(index1D);
+		
+		Helper::printDouble(rhs);
+		return Builder.CreateStore(rhs, lhsAlloc);
 	}
 	else
-		return Helper::LogErrorV("destination of '=' must be a variable");
+		return Helper::LogErrorV("destination of '=' must be a Variable or Array");
 	
 	return nullptr;
 }
@@ -229,11 +217,6 @@ llvm::Value* ArrayAccessExprAST::codegen() {
 	llvm::Value *j = Index2->codegen();
 
 	llvm::Value* index1D = Helper::ComputeIndex(ArrayName, i, j);
-	Helper::printDouble(index1D);
-
-	llvm::Value* t = llvm::ConstantFP::get(TheContext, llvm::APFloat((double)14));
-	Helper::TestImageAccess(imageData, t);
-	// Helper::TestImageAccess(imageData, i);
 
 	return Helper::GEPLoad(imageData, index1D);
 }
