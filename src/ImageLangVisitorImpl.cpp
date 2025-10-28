@@ -194,7 +194,7 @@ llvm::Value* AssignExprAST::codegen() {
 		// Helper::GEPStore(imageData, index1D, rhs);
 		//
 
-		Helper::printInt(rhs);
+		// Helper::printDouble(rhs);
 
 		return Builder.CreateStore(rhs, lhsAlloc);
 	}
@@ -229,7 +229,11 @@ llvm::Value* ArrayAccessExprAST::codegen() {
 	llvm::Value *j = Index2->codegen();
 
 	llvm::Value* index1D = Helper::ComputeIndex(ArrayName, i, j);
-	Helper::printInt(index1D);
+	Helper::printDouble(index1D);
+
+	llvm::Value* t = llvm::ConstantFP::get(TheContext, llvm::APFloat((double)14));
+	Helper::TestImageAccess(imageData, t);
+	// Helper::TestImageAccess(imageData, i);
 
 	return Helper::GEPLoad(imageData, index1D);
 }

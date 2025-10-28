@@ -56,7 +56,11 @@ extern "C" double get_image_height(Image* img) {
     return height;
 }
 
-extern "C" void printInt(double n) {
+extern "C" void printDouble(double n) {
+    std::cout<<"Integer: "<<n<<'\n';
+}
+
+extern "C" void printInt(int n) {
     std::cout<<"Integer: "<<n<<'\n';
 }
 
