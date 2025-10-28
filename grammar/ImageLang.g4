@@ -15,6 +15,7 @@ statement
     | intAssign
     | applyMask
     | applyThreshold
+    | applyBoxBlur
     | ';'
     ;
 
@@ -61,6 +62,11 @@ applyThreshold
     : 'apply_threshold' '(' ID ',' expr ',' expr ')' ';'
     ;
 
+// ===== BoxBlur application =====
+applyBoxBlur
+    : 'apply_boxblur' '(' ID ',' expr ')' ';'
+    ;
+
 // ===== Expressions (with precedence) =====
 expr
     : addExpr
@@ -105,4 +111,12 @@ STRING
 
 WS
     : [ \t\r\n]+ -> skip
+    ;
+
+COMMENT
+    : '//' ~[\r\n]* -> skip
+    ;
+
+MULTILINE_COMMENT
+    : '/*' .*? '*/' -> skip
     ;

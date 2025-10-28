@@ -278,7 +278,7 @@ llvm::Value *VarDeclExprAST::codegen() {
 
 llvm::Value *BinaryExprAST::codegen() {
 	// Special case '=' because we don't want to emit the LHS as an expression.
-	if (Op == '=') {
+	if (Op == "=") {
 		// Assignment requires the LHS to be an identifier.
 		VariableExprAST *LHSE = static_cast<VariableExprAST *>(LHS.get());
 		if (!LHSE)
@@ -303,20 +303,24 @@ llvm::Value *BinaryExprAST::codegen() {
 	if (!L || !R)
 		return nullptr;
 
-	switch (Op) {
-		case '+':
-			return Builder.CreateFAdd(L, R, "addtmp");
-		case '-':
-			return Builder.CreateFSub(L, R, "subtmp");
-		case '*':
-			return Builder.CreateFMul(L, R, "multmp");
-		case '<':
-			L = Builder.CreateFCmpULT(L, R, "cmptmp");
-			// Convert bool 0/1 to double 0.0 or 1.0
-			return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext), "booltmp");
-		default:
-			break;
-		}
+	if (Op == "+")
+	{
+		return Builder.CreateFAdd(L, R, "addtmp");
+	}
+	else if (Op == "+")
+	{
+		return Builder.CreateFSub(L, R, "subtmp");
+	}
+	else if(Op == "*")
+	{
+		return Builder.CreateFMul(L, R, "multmp");
+	}
+	else if(Op == "<")
+	{
+		L = Builder.CreateFCmpULT(L, R, "cmptmp");
+		// Convert bool 0/1 to double 0.0 or 1.0
+		return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext), "booltmp");
+	}
 }
 
 // llvm::Value *IfExprAST::codegen() {

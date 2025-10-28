@@ -36,13 +36,21 @@ public:
         : Name(std::move(Name)), InitExpr(std::move(InitExpr)) {}
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "VarDeclExprAST " << Name;
-        if (InitExpr) {
-            std::cout << " (init):\n";
-            InitExpr->print(indent + 2);
-        } else {
-            std::cout << " (no init)\n";
+        if(Name != "")
+        {
+            std::cout << std::string(indent, ' ') << "VarDeclExprAST " << Name;
+            if (InitExpr) {
+                std::cout << std::string(indent, ' ')<<"\n";
+                InitExpr->print(indent + 2);
+            } else {
+                std::cout << " (no init)\n";
+            }
         }
+        else
+        {
+            std::cout <<"Invalid VarDeclExprAST\n";
+        }
+        
     }
 
     llvm::Value *codegen() override;
@@ -58,25 +66,44 @@ public:
     const std::string &getTypeStr() const { return "VariableExprAST"; }
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
+        if(Name != "")
+        {
+            std::cout << std::string(indent, ' ') << "VariableExprAST " << Name << "\n";
+        }
+        else
+        {
+            std::cout <<"Invalid VariableExprAST\n";
+        }
     }
+
     llvm::Value *codegen() override;
 };
 
 // /// Binary operation, e.g. `a + b`
 class BinaryExprAST : public ExprAST {
-    char Op;
+    std::string Op;
     std::unique_ptr<ExprAST> LHS, RHS;
 
 public:
     BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
+        : Op(std::string(1, Op)), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+
+    BinaryExprAST(std::string Op, std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS)
         : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
-        LHS->print(indent + 2);
-        RHS->print(indent + 2);
+        if(Op != "" && LHS != nullptr && RHS != nullptr)
+        {
+            std::cout << std::string(indent, ' ') << "BinaryExprAST " << Op << "\n";
+            LHS->print(indent + 2);
+            RHS->print(indent + 2);
+        }
+        else
+        {
+            std::cout <<"Invalid BinaryExprAST\n";
+        }
     }
+
     llvm::Value *codegen() override;
 };
 
@@ -92,9 +119,17 @@ public:
     const std::string &getTypeStr() const { return "ArrayAccessExprAST"; }
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "[]";
-        Index1->print(indent + 2);
-        Index2->print(indent + 2);
+        if(ArrayName != "" && Index1 != nullptr && Index2 != nullptr)
+        {
+            std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "[]";
+            Index1->print(indent + 2);
+            Index2->print(indent + 2);
+        }
+        else
+        {
+            std::cout <<"Invalid ArrayAccessExprAST\n";
+        }
+
     }
 
     llvm::Value *codegen() override;
@@ -110,10 +145,17 @@ public:
         : LHS(std::move(LHS)), RHS(std::move(RHS)) {}
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "\n ";
-        LHS->print(indent + 2) ;
-        std::cout << "=";
-        RHS->print(indent + 2);
+        if(LHS != nullptr && RHS != nullptr)
+        {
+            std::cout << std::string(indent, ' ') << "\n ";
+            LHS->print(indent + 2) ;
+            std::cout << "=";
+            RHS->print(indent + 2);
+        }
+        else
+        {
+            std::cout <<"Invalid AssignExprAST\n";
+        }
     }
 
     llvm::Value *codegen() override;
@@ -133,35 +175,42 @@ public:
 
     void print(int indent = 0) const override 
     {
-        auto pad = [&](int n) { return std::string(n, ' '); };
+        if(Cond != nullptr)
+        {
+            auto pad = [&](int n) { return std::string(n, ' '); };
 
-        std::cout << pad(indent) << "IfExprAST\n";
+            std::cout << pad(indent) << "IfExprAST\n";
 
-        std::cout << pad(indent + 2) << "Condition:\n";
-        if (Cond)
-            Cond->print(indent + 4);
+            std::cout << pad(indent + 2) << "Condition:\n";
+            if (Cond)
+                Cond->print(indent + 4);
+            else
+                std::cout << pad(indent + 4) << "(none)\n";
+
+            std::cout << pad(indent + 2) << "Then:\n";
+            if (Then.empty()) {
+                std::cout << pad(indent + 4) << "(empty)\n";
+            } else {
+                for (const auto &stmt : Then) {
+                    if (stmt) stmt->print(indent + 4);
+                    std::cout << "\n";
+                }
+            }
+
+            std::cout << pad(indent + 2) << "Else:\n";
+            if (Else.empty()) {
+                std::cout << pad(indent + 4) << "(empty)\n";
+            } else {
+                for (const auto &stmt : Else) {
+                    if (stmt) stmt->print(indent + 4);
+                    std::cout << "\n";
+                }
+            }
+        }
         else
-            std::cout << pad(indent + 4) << "(none)\n";
-
-        std::cout << pad(indent + 2) << "Then:\n";
-        if (Then.empty()) {
-            std::cout << pad(indent + 4) << "(empty)\n";
-        } else {
-            for (const auto &stmt : Then) {
-                if (stmt) stmt->print(indent + 4);
-                std::cout << "\n";
-            }
-        }
-
-        std::cout << pad(indent + 2) << "Else:\n";
-        if (Else.empty()) {
-            std::cout << pad(indent + 4) << "(empty)\n";
-        } else {
-            for (const auto &stmt : Else) {
-                if (stmt) stmt->print(indent + 4);
-                std::cout << "\n";
-            }
-        }
+        {
+            std::cout <<"Invalid IfExprAST\n";
+        }   
     }
 
 };
@@ -179,26 +228,34 @@ public:
         : VarName(std::move(VarName)), Start(std::move(Start)), End(std::move(End)), Step(std::move(Step)), Body(std::move(Body)) {}
 
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
-        std::cout << std::string(indent + 2, ' ') << "Start:\n";
-        Start->print(indent + 4);
-        std::cout << std::string(indent + 2, ' ') << "End:\n";
-        End->print(indent + 4);
-        std::cout << std::string(indent + 2, ' ') << "Step:\n";
-        Step->print(indent + 4);
-        std::cout << std::string(indent + 2, ' ') << "Body:\n";
-        if (Body.empty()) 
+        if(VarName != "" && Start != nullptr && End != nullptr && Step != nullptr)
         {
-                std::cout << std::string(indent + 4, ' ') << "(empty)\n";
-        } 
-        else 
-        {
-            for (const auto &stmt : Body) 
+            std::cout << std::string(indent, ' ') << "ForExprAST " << VarName << "\n";
+            std::cout << std::string(indent + 2, ' ') << "Start:\n";
+            Start->print(indent + 4);
+            std::cout << std::string(indent + 2, ' ') << "End:\n";
+            End->print(indent + 4);
+            std::cout << std::string(indent + 2, ' ') << "Step:\n";
+            Step->print(indent + 4);
+            std::cout << std::string(indent + 2, ' ') << "Body:\n";
+            if (Body.empty()) 
             {
-                if (stmt) stmt->print(indent + 4);
-                std::cout << "\n"; // ensure spacing between nested prints
+                std::cout << std::string(indent + 4, ' ') << "(empty)\n";
+            } 
+            else 
+            {
+                for (const auto &stmt : Body) 
+                {
+                    if (stmt) stmt->print(indent + 4);
+                    std::cout << "\n"; // ensure spacing between nested prints
+                }
             }
         }
+        else
+        {
+            std::cout <<"Invalid ForExprAST\n";
+        }
+        
     }
     llvm::Value *codegen() override;
 };
@@ -311,6 +368,11 @@ struct ProgramAST : ExprAST {
     std::vector<std::unique_ptr<ExprAST>> Statements;
 
     void addStmt(std::unique_ptr<ExprAST> stmt) {
+        if (!stmt) 
+        {
+            std::cerr << "[DEBUG] skipping null stmt in addStmt()\n";
+            return;
+        }
         Statements.push_back(std::move(stmt));
     }
 

@@ -60,6 +60,8 @@ int main(int argc, const char* argv[])
     //Parse Tree
     auto tree = parser.program();
 
+    //printParseTree(tree);
+
     //AST
     ASTBuilder builder;
     auto programAST = builder.build(tree);
@@ -67,8 +69,13 @@ int main(int argc, const char* argv[])
     std::cout<<"Printing the Parse Tree : \n";
 
     programAST->print();
+
     
+    std::cout<<"Get Struct Type : \n";
+
     getImageStructType();
+
+    std::cout<<"Codegen : \n";
 
     programAST->codegen();
     std::cout<<"\n--------------------------------------------------------------------\n";

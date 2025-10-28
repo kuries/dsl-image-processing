@@ -27,16 +27,265 @@ public:
 private:
     std::unique_ptr<ExprAST> buildStatement(ImageLangParser::StatementContext *ctx) 
     {
-        if (ctx->imageDecl())     return buildImageDecl(ctx->imageDecl());
-        if (ctx->maskDecl())      return buildMaskDecl(ctx->maskDecl());
-        if (ctx->saveStmt())      return buildSaveStmt(ctx->saveStmt());
-        if (ctx->pixelAssign())   return buildPixelAssign(ctx->pixelAssign());
-        if (ctx->applyMask())     return buildApplyMask(ctx->applyMask());
-        if (ctx->intDecl())       return buildIntDecl(ctx->intDecl());
-        if (ctx->intAssign())     return buildIntAssign(ctx->intAssign());
-        if (ctx->applyThreshold())     return buildApplyThreshold(ctx->applyThreshold());
+        if (ctx->imageDecl())           return buildImageDecl(ctx->imageDecl());
+        if (ctx->maskDecl())            return buildMaskDecl(ctx->maskDecl());
+        if (ctx->saveStmt())            return buildSaveStmt(ctx->saveStmt());
+        if (ctx->pixelAssign())         return buildPixelAssign(ctx->pixelAssign());
+        if (ctx->applyMask())           return buildApplyMask(ctx->applyMask());
+        if (ctx->intDecl())             return buildIntDecl(ctx->intDecl());
+        if (ctx->intAssign())           return buildIntAssign(ctx->intAssign());
+        if (ctx->applyThreshold())      return buildApplyThreshold(ctx->applyThreshold());
+        if (ctx->applyBoxBlur())        return buildApplyBoxBlur(ctx->applyBoxBlur());
+        
+        std::cout<<"Gotcha !\n";
         return nullptr;
     }
+
+    std::unique_ptr<ExprAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
+    {
+        std::vector<std::unique_ptr<ExprAST>> body;
+
+        std::string imageName = ctx->ID()->getText();
+
+        auto kernelWidthExpr = buildExpr(ctx->expr());
+
+        // Variable names
+        auto kernelWidthVar = "kernelWidth";
+        auto radiusVar = "radius";
+        auto negRadiusVar = "negRadius";
+        auto sumVar = "sum";
+        auto countVar = "count";
+        //image nested for loop
+        auto iVar = "i";
+        auto jVar = "j";
+        //kernel nested for loop
+        auto dxVar = "dx";
+        auto dyVar = "dy";
+        auto nxVar = "nx";
+        auto nyVar = "ny";
+
+        // kernelWidth = <expr>
+        auto kernelWidthAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(kernelWidthVar),
+            std::move(kernelWidthExpr)
+        );
+
+        // radius = kernelWidth / 2 + 1
+        auto radiusAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(radiusVar),
+            std::make_unique<BinaryExprAST>(
+                "/",
+                std::make_unique<VariableExprAST>(kernelWidthVar),
+                std::make_unique<NumberExprAST>(2)
+            )
+        );
+
+        //for for loop checking 
+        auto radiusAssignIncr = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(radiusVar),
+            std::make_unique<BinaryExprAST>(
+                "/",
+                std::make_unique<VariableExprAST>(radiusVar),
+                std::make_unique<NumberExprAST>(2)
+            )
+        );
+
+        // radius = kernelWidth / 2
+        auto negRadiusAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(negRadiusVar),
+            std::make_unique<BinaryExprAST>(
+                "*",
+                std::make_unique<VariableExprAST>(radiusVar),
+                std::make_unique<NumberExprAST>(-1)
+            )
+        );
+
+        body.push_back(std::move(kernelWidthAssign));
+        body.push_back(std::move(radiusAssign));
+        body.push_back(std::move(radiusAssignIncr));
+        body.push_back(std::move(negRadiusAssign));
+        
+
+        // Outer loops over image (i, j)
+        // for (i = 0; i < image.height; i++)
+        // for (j = 0; j < image.width; j++)
+
+        // ----- Inner dx, dy loops -----
+        // Create loop body for dx, dy: accumulate sum and count
+        std::vector<std::unique_ptr<ExprAST>> dxBody;
+
+        // nx = j + dx
+        auto nxAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(nxVar),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<VariableExprAST>(dxVar)
+            )
+        );
+
+        // ny = i + dy
+        auto nyAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(nyVar),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(dyVar)
+            )
+        );
+
+        // condition: nx >= 0 && nx < image.width && ny >= 0 && ny < image.height
+        auto nxInBounds = std::make_unique<BinaryExprAST>(
+            "&&",
+            std::make_unique<BinaryExprAST>(
+                ">=",
+                std::make_unique<VariableExprAST>(nxVar),
+                std::make_unique<NumberExprAST>(0)
+            ),
+            std::make_unique<BinaryExprAST>(
+                "<",
+                std::make_unique<VariableExprAST>(nxVar),
+                std::make_unique<VariableExprAST>(imageName + ".width")
+            )
+        );
+
+        auto nyInBounds = std::make_unique<BinaryExprAST>(
+            "&&",
+            std::make_unique<BinaryExprAST>(
+                ">=",
+                std::make_unique<VariableExprAST>(nyVar),
+                std::make_unique<NumberExprAST>(0)
+            ),
+            std::make_unique<BinaryExprAST>(
+                "<",
+                std::make_unique<VariableExprAST>(nyVar),
+                std::make_unique<VariableExprAST>(imageName + ".height")
+            )
+        );
+
+        auto fullCondition = std::make_unique<BinaryExprAST>(
+            "&&",
+            std::move(nxInBounds),
+            std::move(nyInBounds)
+        );
+
+        // sum = sum + image[ny][nx]
+        auto sumUpdate = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(sumVar),
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(nyVar),
+                    std::make_unique<VariableExprAST>(nxVar)
+                )
+            )
+        );
+
+        // count = count + 1
+        auto countUpdate = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(countVar),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(countVar),
+                std::make_unique<NumberExprAST>(1)
+            )
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> ifBody;
+        ifBody.push_back(std::move(sumUpdate));
+        ifBody.push_back(std::move(countUpdate));
+
+        auto ifCondition = std::make_unique<IfExprAST>(
+            std::move(fullCondition),
+            std::move(ifBody),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> dxLoopBody;
+        dxLoopBody.push_back(std::move(nxAssign));
+        dxLoopBody.push_back(std::move(nyAssign));
+        dxLoopBody.push_back(std::move(ifCondition));
+
+        // dx loop
+        auto dxLoop = std::make_unique<ForExprAST>(
+            dxVar,
+            std::make_unique<VariableExprAST>(negRadiusVar),
+            std::make_unique<VariableExprAST>(radiusVar),
+            std::make_unique<NumberExprAST>(1),
+            std::move(dxLoopBody)
+        );
+
+        // dy loop wraps dx loop
+        std::vector<std::unique_ptr<ExprAST>> dyBody;
+        dyBody.push_back(std::move(dxLoop));
+
+        auto dyLoop = std::make_unique<ForExprAST>(
+            dyVar,
+            std::make_unique<VariableExprAST>(negRadiusVar),
+            std::make_unique<VariableExprAST>(radiusVar),
+            std::make_unique<NumberExprAST>(1),
+            std::move(dyBody)
+        );
+
+        // sum/count assign to image[i][j]
+        auto assignBlur = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar)
+            ),
+            std::make_unique<BinaryExprAST>(
+                "/",
+                std::make_unique<VariableExprAST>(sumVar),
+                std::make_unique<VariableExprAST>(countVar)
+            )
+        );
+
+        // inner body (for each pixel)
+        std::vector<std::unique_ptr<ExprAST>> innerBody;
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar),
+            std::make_unique<NumberExprAST>(0)
+        ));
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(countVar),
+            std::make_unique<NumberExprAST>(0)
+        ));
+        innerBody.push_back(std::move(dyLoop));
+        innerBody.push_back(std::move(assignBlur));
+
+        // j loop
+        auto jLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(jLoop));
+
+        // i loop
+        auto iLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
+
+        body.push_back(std::move(iLoop));
+
+        auto program = std::make_unique<ProgramAST>();
+        for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        return program;
+    }
+
 
 
     std::unique_ptr<ExprAST> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
@@ -70,7 +319,7 @@ private:
         auto jVar = "j";
 
         auto condition = std::make_unique<BinaryExprAST>(
-            '>', 
+            ">", 
             std::make_unique<ArrayAccessExprAST>(
                 imageName,
                 std::make_unique<VariableExprAST>(iVar),
@@ -157,7 +406,7 @@ private:
         // ctx->children contains interleaved operators and operands
         for (size_t i = 1; i < ctx->mulExpr().size(); ++i) {
             std::string opText = ctx->children[2*i - 1]->getText(); // operator token
-            char op = opText[0]; // '+' or '-'
+            char op = opText[0]; // "+" or "-"
             auto rhs = buildMulExpr(ctx->mulExpr(i));
             lhs = std::make_unique<BinaryExprAST>(op, std::move(lhs), std::move(rhs));
         }
@@ -171,7 +420,7 @@ private:
 
         for (size_t i = 1; i < ctx->primary().size(); ++i) {
             std::string opText = ctx->children[2*i - 1]->getText(); // operator token
-            char op = opText[0]; // '*' or '/'
+            char op = opText[0]; // "*" or "/"
             auto rhs = buildPrimary(ctx->primary(i));
             lhs = std::make_unique<BinaryExprAST>(op, std::move(lhs), std::move(rhs));
         }
