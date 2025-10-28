@@ -13,3 +13,7 @@ input[0][5] = i1 + i2 * i3;
 apply_threshold(input, 100.3, 50.999);
 
 apply_boxblur(input, 3);
+
+adjust_brightness(input , 100);
+
+adjust_contrast(input , 100);
