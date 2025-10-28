@@ -14,6 +14,7 @@ statement
     | intDecl
     | intAssign
     | applyMask
+    | applyThreshold
     | ';'
     ;
 
@@ -53,6 +54,11 @@ intAssign
 // ===== Mask application =====
 applyMask
     : 'apply_mask' '(' ID ',' ID ',' 'x=' INT ',' 'y=' INT ')' ';'
+    ;
+
+// ===== Threshold application =====
+applyThreshold
+    : 'apply_threshold' '(' ID ',' expr ',' expr ')' ';'
     ;
 
 // ===== Expressions (with precedence) =====

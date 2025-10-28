@@ -34,7 +34,113 @@ private:
         if (ctx->applyMask())     return buildApplyMask(ctx->applyMask());
         if (ctx->intDecl())       return buildIntDecl(ctx->intDecl());
         if (ctx->intAssign())     return buildIntAssign(ctx->intAssign());
+        if (ctx->applyThreshold())     return buildApplyThreshold(ctx->applyThreshold());
         return nullptr;
+    }
+
+
+    std::unique_ptr<ExprAST> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
+    {
+        std::vector<std::unique_ptr<ExprAST>> body;
+
+        std::string imageName = ctx->ID()->getText();
+
+        auto thresholdExpr = buildExpr(ctx->expr(0));
+        auto maxValueExpr = buildExpr(ctx->expr(1));
+
+        auto thresholdStr = "threshold";
+        auto maxValueStr = "maxValue";
+
+        
+
+        auto thresholdAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(thresholdStr),
+            std::move(thresholdExpr)
+        );
+
+        auto maxValueAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(maxValueStr),
+            std::move(maxValueExpr)
+        );
+
+        body.push_back(std::move(thresholdAssign));
+        body.push_back(std::move(maxValueAssign));
+
+        auto iVar = "i";
+        auto jVar = "j";
+
+        auto condition = std::make_unique<BinaryExprAST>(
+            '>', 
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar)
+            ),
+            std::make_unique<VariableExprAST>(thresholdStr)
+        );
+
+        auto lhsAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar)
+            ),
+            std::make_unique<VariableExprAST>(maxValueStr)
+        );
+
+        auto rhsAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar)
+            ),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> thenBody;
+        thenBody.push_back(std::move(lhsAssign));
+
+        std::vector<std::unique_ptr<ExprAST>> elseBody;
+        elseBody.push_back(std::move(rhsAssign));
+
+        auto ifElseConfition = std::make_unique<IfExprAST>(
+            std::move(condition),
+            std::move(thenBody),
+            std::move(elseBody)
+        );
+        
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody;
+        innerBody.push_back(std::move(ifElseConfition));
+
+        // Inner loop (j)
+        auto innerLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(innerLoop));
+
+        // Outer loop (i)
+        auto outerLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
+
+        body.push_back(std::move(outerLoop));
+
+        auto program = std::make_unique<ProgramAST>();
+        for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        return program;
     }
 
     // Entry point for building expressions

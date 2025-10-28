@@ -130,6 +130,40 @@ public:
       : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
 
     llvm::Value *codegen() override;
+
+    void print(int indent = 0) const override 
+    {
+        auto pad = [&](int n) { return std::string(n, ' '); };
+
+        std::cout << pad(indent) << "IfExprAST\n";
+
+        std::cout << pad(indent + 2) << "Condition:\n";
+        if (Cond)
+            Cond->print(indent + 4);
+        else
+            std::cout << pad(indent + 4) << "(none)\n";
+
+        std::cout << pad(indent + 2) << "Then:\n";
+        if (Then.empty()) {
+            std::cout << pad(indent + 4) << "(empty)\n";
+        } else {
+            for (const auto &stmt : Then) {
+                if (stmt) stmt->print(indent + 4);
+                std::cout << "\n";
+            }
+        }
+
+        std::cout << pad(indent + 2) << "Else:\n";
+        if (Else.empty()) {
+            std::cout << pad(indent + 4) << "(empty)\n";
+        } else {
+            for (const auto &stmt : Else) {
+                if (stmt) stmt->print(indent + 4);
+                std::cout << "\n";
+            }
+        }
+    }
+
 };
 
 /// For loop: for i = start .. end { body }
@@ -153,8 +187,18 @@ public:
         std::cout << std::string(indent + 2, ' ') << "Step:\n";
         Step->print(indent + 4);
         std::cout << std::string(indent + 2, ' ') << "Body:\n";
-        for (auto &stmt : Body)
-            stmt->print(indent + 4);
+        if (Body.empty()) 
+        {
+                std::cout << std::string(indent + 4, ' ') << "(empty)\n";
+        } 
+        else 
+        {
+            for (const auto &stmt : Body) 
+            {
+                if (stmt) stmt->print(indent + 4);
+                std::cout << "\n"; // ensure spacing between nested prints
+            }
+        }
     }
     llvm::Value *codegen() override;
 };

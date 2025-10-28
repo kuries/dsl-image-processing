@@ -25,3 +25,5 @@ input[0][1] = 5;
 blur[0][0] = i1;
 
 input[0][5] = i1 + i2 * i3;
+
+apply_threshold(input, 100, 50);
