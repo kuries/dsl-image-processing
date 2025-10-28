@@ -14,6 +14,8 @@ statement
     | numAssign
     | applyThreshold
     | applyBoxBlur
+    | applyAdjustBrightness
+    | applyAdjustContrast
     | ';'
     ;
 
@@ -55,6 +57,16 @@ applyThreshold
 // ===== BoxBlur application =====
 applyBoxBlur
     : 'apply_boxblur' '(' ID ',' expr ')' ';'
+    ;
+
+// ===== BrightnessAdjust application =====
+applyAdjustBrightness
+    : 'adjust_brightness' '(' ID ',' expr  ')' ';'
+    ;
+
+ // ===== ContrastAdjust application =====
+applyAdjustContrast
+    : 'adjust_contrast' '(' ID ',' expr  ')' ';'
     ;
 
 // ===== Expressions (with precedence) =====

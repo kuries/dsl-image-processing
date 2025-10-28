@@ -27,17 +27,259 @@ public:
 private:
     std::unique_ptr<ExprAST> buildStatement(ImageLangParser::StatementContext *ctx) 
     {
-        if (ctx->imageDecl())           return buildImageDecl(ctx->imageDecl());
-        if (ctx->saveStmt())            return buildSaveStmt(ctx->saveStmt());
-        if (ctx->pixelAssign())         return buildPixelAssign(ctx->pixelAssign());
-        if (ctx->numDecl())             return buildNumDecl(ctx->numDecl());
-        if (ctx->numAssign())           return buildNumAssign(ctx->numAssign());
-        if (ctx->applyThreshold())      return buildApplyThreshold(ctx->applyThreshold());
-        if (ctx->applyBoxBlur())        return buildApplyBoxBlur(ctx->applyBoxBlur());
-        
+        if (ctx->imageDecl())               return buildImageDecl(ctx->imageDecl());
+        if (ctx->saveStmt())                return buildSaveStmt(ctx->saveStmt());
+        if (ctx->pixelAssign())             return buildPixelAssign(ctx->pixelAssign());
+        if (ctx->numDecl())                 return buildNumDecl(ctx->numDecl());
+        if (ctx->numAssign())               return buildNumAssign(ctx->numAssign());
+        if (ctx->applyThreshold())          return buildApplyThreshold(ctx->applyThreshold());
+        if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
+        if (ctx->applyAdjustBrightness())   return buildApplyBrightnessAdjust(ctx->applyAdjustBrightness());
+        if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
         std::cout<<"Gotcha !\n";
         return nullptr;
     }
+
+    std::unique_ptr<ProgramAST> buildApplyBrightnessAdjust(ImageLangParser::ApplyAdjustBrightnessContext *ctx)
+    {
+        std::vector<std::unique_ptr<ExprAST>> body;
+
+        std::string imageName = ctx->ID()->getText();
+
+        auto brightnessExpr = buildExpr(ctx->expr());
+
+        auto brightnessStr = "brightness";
+        auto newValStr = "newVal";
+
+        auto brightnessAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(brightnessStr),
+            std::move(brightnessExpr)
+        );
+
+        body.push_back(std::move(brightnessAssign));
+
+        auto iVar = "i";
+        auto jVar = "j";
+        
+        auto newVal = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(newValStr),
+            std::make_unique<BinaryExprAST>(
+                "+", 
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar)
+                ),
+                std::make_unique<VariableExprAST>(brightnessStr)
+            )
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> ifBody;
+        ifBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(0)
+            )
+        );
+
+        auto lessThanMinIfConfition = std::make_unique<IfExprAST>(
+            std::make_unique<BinaryExprAST>(
+                "<", 
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(0)
+            ),
+            std::move(ifBody),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> ifBody2;
+        ifBody2.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(255)
+            )
+        );
+
+        auto greaterThanMinIfConfition = std::make_unique<IfExprAST>(
+            std::make_unique<BinaryExprAST>(
+                ">", 
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(255)
+            ),
+            std::move(ifBody2),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        auto overwritePixel = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar)
+                ),
+            std::make_unique<VariableExprAST>(newValStr)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody;
+
+        innerBody.push_back(std::move(newVal));
+        innerBody.push_back(std::move(lessThanMinIfConfition));
+        innerBody.push_back(std::move(greaterThanMinIfConfition));
+        innerBody.push_back(std::move(overwritePixel));
+
+        // Inner loop (j)
+        auto innerLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(innerLoop));
+
+        // Outer loop (i)
+        auto outerLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
+
+        body.push_back(std::move(outerLoop));
+
+        auto program = std::make_unique<ProgramAST>();
+        for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        return program;
+    }
+
+    std::unique_ptr<ProgramAST> buildApplyContrastAdjust(ImageLangParser::ApplyAdjustContrastContext *ctx)
+    {
+        std::vector<std::unique_ptr<ExprAST>> body;
+
+        std::string imageName = ctx->ID()->getText();
+
+        auto contrastExpr = buildExpr(ctx->expr());
+
+        auto contrastStr = "contrast";
+        auto newValStr = "newVal";
+
+        auto contrastAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(contrastStr),
+            std::move(contrastExpr)
+        );
+
+        body.push_back(std::move(contrastAssign));
+
+        auto iVar = "i";
+        auto jVar = "j";
+        
+        auto newVal = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(newValStr),
+            std::make_unique<BinaryExprAST>(
+                "+", 
+                std::make_unique<BinaryExprAST>(
+                    "*", 
+                    std::make_unique<BinaryExprAST>(
+                        "-", 
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar)
+                        ),
+                        std::make_unique<NumberExprAST>(128)
+                    ),
+                    std::make_unique<VariableExprAST>(contrastStr)
+                ),
+                std::make_unique<NumberExprAST>(128)
+            )
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> ifBody;
+        ifBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(0)
+            )
+        );
+
+        auto lessThanMinIfConfition = std::make_unique<IfExprAST>(
+            std::make_unique<BinaryExprAST>(
+                "<", 
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(0)
+            ),
+            std::move(ifBody),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> ifBody2;
+        ifBody2.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(255)
+            )
+        );
+
+        auto greaterThanMinIfConfition = std::make_unique<IfExprAST>(
+            std::make_unique<BinaryExprAST>(
+                ">", 
+                std::make_unique<VariableExprAST>(newValStr),
+                std::make_unique<NumberExprAST>(255)
+            ),
+            std::move(ifBody2),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        auto overwritePixel = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar)
+                ),
+            std::make_unique<VariableExprAST>(newValStr)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody;
+
+        innerBody.push_back(std::move(newVal));
+        innerBody.push_back(std::move(lessThanMinIfConfition));
+        innerBody.push_back(std::move(greaterThanMinIfConfition));
+        innerBody.push_back(std::move(overwritePixel));
+
+        // Inner loop (j)
+        auto innerLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(innerLoop));
+
+        // Outer loop (i)
+        auto outerLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
+
+        body.push_back(std::move(outerLoop));
+
+        auto program = std::make_unique<ProgramAST>();
+        for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        return program;
+    }
+
 
     std::unique_ptr<ProgramAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
     {
