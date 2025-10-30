@@ -65,19 +65,6 @@ llvm::Value *ImageDeclExprAST::codegen() {
 	Builder.CreateStore(width, AllocaW);
 	NamedValues[Name+".width"] = AllocaW;
 
-	//Example
-	// llvm::Function *printInt = getRuntimeFunction("printInt", llvm::Type::getInt8Ty(TheContext),
-    //                        { llvm::Type::getInt8Ty(TheContext) });
-	
-	// llvm::Value* v = Helper::GEPLoad(data, 2);
-	// Builder.CreateCall(printInt, { v }, "print");
-
-	// llvm::Value *valueToStore = llvm::ConstantInt::get(llvm::Type::getInt32Ty(TheContext), 55);
-	// Helper::GEPStore(data, 2, valueToStore);
-
-	// llvm::Value* g = Helper::GEPLoad(data, 2);
-	// Builder.CreateCall(printInt, { g }, "print");
-
     return initVal;
 }
 
@@ -95,7 +82,6 @@ llvm::Value *StoreExprAST::codegen() {
         return nullptr;
     }
 	llvm::Value *imgHandle = Builder.CreateLoad(it->second->getAllocatedType(), it->second, ImageName.c_str());
-	// llvm::Value *imgHandle = it->second;
     llvm::Value *pathValue = Builder.CreateGlobalStringPtr(Path, "save_path");
     Builder.CreateCall(saveFunc, { imgHandle, pathValue });
     return nullptr;
@@ -187,20 +173,18 @@ llvm::Value* AssignExprAST::codegen() {
 	else if (ArrayAccessExprAST *LHSEArr = dynamic_cast<ArrayAccessExprAST *>(LHS.get())) 
 	{
 		cout<<"Array\n";
-		ArrayAccessExprAST *LHSE = static_cast<ArrayAccessExprAST *>(LHS.get());
-		llvm::Value* lhsAlloc = NamedValues[LHSE->getName()];
-		lhsName = LHSE->getName();
+		lhsName = LHSEArr->getName();
 		llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
 		llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");
 
-		llvm::Value *i = LHSE->Index1->codegen();
-		llvm::Value *j = LHSE->Index2->codegen();
+		llvm::Value *i = LHSEArr->Index1->codegen();
+		llvm::Value *j = LHSEArr->Index2->codegen();
 		llvm::Value *rhs = RHS->codegen();
 
 		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
 		
 		Helper::printDouble(rhs);
-		return Builder.CreateStore(rhs, lhsAlloc);
+		return Helper::GEPStore(imageData, index1D, rhs);
 	}
 	else
 		return Helper::LogErrorV("destination of '=' must be a Variable or Array");
