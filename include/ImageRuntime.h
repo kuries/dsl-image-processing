@@ -17,7 +17,7 @@ extern "C" {
 
     extern "C" {
         Image* load_image(const char* path);
-        void save_image(Image* img, const char* path);
+        void save_image(Image* img, double*, const char* path);
         void free_image(Image* img);
         double get_image_height(Image* img);
         double get_image_width(Image* img);

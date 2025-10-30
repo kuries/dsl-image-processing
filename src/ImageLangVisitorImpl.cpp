@@ -10,6 +10,7 @@ using namespace std;
 
 
 llvm::Value *LoadExprAST::codegen() {
+	cout<<"entered load";
     auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
 
     // Declare or retrieve extern "C" function: Image* load_image(const char*)
@@ -35,7 +36,6 @@ llvm::Value *ImageDeclExprAST::codegen() {
 	llvm::AllocaInst *Alloca = Helper::CreateEntryBlockAlloca(TheFunction, Name.c_str(), ImagePtrTy);
 	Builder.CreateStore(initVal, Alloca);
     NamedValues[Name] = Alloca;
-
 	//Store image properties
 	llvm::Function *loadImageHeight =
         getRuntimeFunction("get_image_height", llvm::Type::getDoubleTy(TheContext),
@@ -74,16 +74,20 @@ llvm::Value *StoreExprAST::codegen() {
 
     llvm::Function *saveFunc =
         getRuntimeFunction("save_image", llvm::Type::getVoidTy(TheContext),
-                           { ImagePtrTy, llvm::PointerType::get(TheContext, 0) });
-
-    auto it = NamedValues.find(ImageName);
+                           { ImagePtrTy, llvm::PointerType::get(TheContext, 0), llvm::PointerType::get(TheContext, 0) });
+    
+	auto it = NamedValues.find(ImageName);
     if (it == NamedValues.end()) {
         std::cerr << "Unknown image variable: " << ImageName << "\n";
         return nullptr;
     }
+	
+	auto imgDataA = NamedValues.find(ImageName+".data");
 	llvm::Value *imgHandle = Builder.CreateLoad(it->second->getAllocatedType(), it->second, ImageName.c_str());
+	llvm::Value *imgData = Builder.CreateLoad(imgDataA->second->getAllocatedType(), imgDataA->second, ImageName.c_str());
     llvm::Value *pathValue = Builder.CreateGlobalStringPtr(Path, "save_path");
-    Builder.CreateCall(saveFunc, { imgHandle, pathValue });
+
+    Builder.CreateCall(saveFunc, { imgHandle, imgData, pathValue });
     return nullptr;
 }
 

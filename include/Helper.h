@@ -25,20 +25,19 @@ class Helper{
         static llvm::Value* GetGEP(llvm::Value *array, llvm::Value* index){
             //todo
             llvm::Value *idx = ConverDoubleToInt(index);
-            llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(TheContext), array, idx, "img_ptr");
+            llvm::Value *gep = Builder.CreateInBoundsGEP(llvm::Type::getDoubleTy(TheContext), array, idx, "img_ptr");
             return gep;
         }   
 
         static llvm::Value* GEPLoad(llvm::Value *array, llvm::Value* index){
             llvm::Value *gep = GetGEP(array, index);
-	        llvm::Value *loaded_byte = Builder.CreateLoad(Builder.getInt8Ty(), gep, "loaded_byte");
-            return ConvertIntToDouble(loaded_byte);
+	        llvm::Value *loaded_byte = Builder.CreateLoad(Builder.getDoubleTy(), gep, "loaded_byte");
+            return loaded_byte;
         }
 
         static llvm::Value* GEPStore(llvm::Value *array, llvm::Value* index, llvm::Value *val){
             llvm::Value *gep = GetGEP(array, index);
-            llvm::Value *asInt8 = ConverDoubleToInt8(val);
-	        llvm::Value *store_inst = Builder.CreateStore(asInt8, gep, "loaded_byte");
+	        llvm::Value *store_inst = Builder.CreateStore(val, gep, "loaded_byte");
             return store_inst;
         }
 
