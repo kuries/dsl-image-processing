@@ -84,6 +84,12 @@ int main(int argc, const char* argv[])
     TheModule->print(llvm::errs(), nullptr);
 
     std::cout<<"\n--------------------------------------------------------------------\n";
+    llvm::Module* m = TheModule.get();
+    if (llvm::verifyModule(*m, &llvm::errs())) {
+        llvm::errs() << "IR verification failed!\n";
+    }
+
+    std::cout<<"\n--------------------------------------------------------------------\n";
 
     auto TheContextPtr = std::make_unique<llvm::LLVMContext>();
     auto TSM = llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContextPtr));
