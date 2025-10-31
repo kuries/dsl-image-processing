@@ -183,9 +183,10 @@ llvm::Value* AssignExprAST::codegen() {
 
 		llvm::Value *i = LHSEArr->Index1->codegen();
 		llvm::Value *j = LHSEArr->Index2->codegen();
+		llvm::Value *k = LHSEArr->Index3->codegen();
 		llvm::Value *rhs = RHS->codegen();
-
-		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j);
+		cout<<"Good so far?\n";
+		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j, k);
 		
 		Helper::printDouble(rhs);
 		return Helper::GEPStore(imageData, index1D, rhs);
@@ -203,8 +204,9 @@ llvm::Value* ArrayAccessExprAST::codegen() {
 
 	llvm::Value *i = Index1->codegen();
 	llvm::Value *j = Index2->codegen();
+	llvm::Value *k = Index3->codegen();
 
-	llvm::Value* index1D = Helper::ComputeIndex(ArrayName, i, j);
+	llvm::Value* index1D = Helper::ComputeIndex(ArrayName, i, j, k);
 
 	return Helper::GEPLoad(imageData, index1D);
 }
