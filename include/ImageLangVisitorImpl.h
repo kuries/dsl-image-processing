@@ -60,71 +60,41 @@ private:
 
         auto iVar = "i";
         auto jVar = "j";
+        auto kVar = "k"; //for RGB
         
-        auto newVal = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(newValStr),
+        auto overwritePixel = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<VariableExprAST>(kVar)
+            ),
             std::make_unique<BinaryExprAST>(
                 "+", 
                 std::make_unique<ArrayAccessExprAST>(
                     imageName,
                     std::make_unique<VariableExprAST>(iVar),
-                    std::make_unique<VariableExprAST>(jVar)
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<VariableExprAST>(kVar)
                 ),
                 std::make_unique<VariableExprAST>(brightnessStr)
             )
         );
 
-        std::vector<std::unique_ptr<ExprAST>> ifBody;
-        ifBody.push_back(
-            std::make_unique<AssignExprAST>(
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(0)
-            )
-        );
+        std::vector<std::unique_ptr<ExprAST>> RBG_Body;
+        RBG_Body.push_back(std::move(overwritePixel));
 
-        auto lessThanMinIfConfition = std::make_unique<IfExprAST>(
-            std::make_unique<BinaryExprAST>(
-                "<", 
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(0)
-            ),
-            std::move(ifBody),
-            std::vector<std::unique_ptr<ExprAST>>{} //no else
-        );
-
-        std::vector<std::unique_ptr<ExprAST>> ifBody2;
-        ifBody2.push_back(
-            std::make_unique<AssignExprAST>(
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(255)
-            )
-        );
-
-        auto greaterThanMinIfConfition = std::make_unique<IfExprAST>(
-            std::make_unique<BinaryExprAST>(
-                ">", 
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(255)
-            ),
-            std::move(ifBody2),
-            std::vector<std::unique_ptr<ExprAST>>{} //no else
-        );
-
-        auto overwritePixel = std::make_unique<AssignExprAST>(
-            std::make_unique<ArrayAccessExprAST>(
-                    imageName,
-                    std::make_unique<VariableExprAST>(iVar),
-                    std::make_unique<VariableExprAST>(jVar)
-                ),
-            std::make_unique<VariableExprAST>(newValStr)
+        // RGB loop (k)
+        auto RGB_Loop = std::make_unique<ForExprAST>(
+            kVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<NumberExprAST>(3),
+            std::make_unique<NumberExprAST>(1),
+            std::move(RBG_Body)
         );
 
         std::vector<std::unique_ptr<ExprAST>> innerBody;
-
-        innerBody.push_back(std::move(newVal));
-        innerBody.push_back(std::move(lessThanMinIfConfition));
-        innerBody.push_back(std::move(greaterThanMinIfConfition));
-        innerBody.push_back(std::move(overwritePixel));
+        innerBody.push_back(std::move(RGB_Loop));
 
         // Inner loop (j)
         auto innerLoop = std::make_unique<ForExprAST>(
@@ -149,8 +119,15 @@ private:
 
         body.push_back(std::move(outerLoop));
 
+        //need to do normalization
+
         auto program = std::make_unique<ProgramAST>();
         for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+
+        for (auto &stmt : ImgNormalizationVector)
             program->addStmt(std::move(stmt));
 
         return program;
@@ -176,9 +153,15 @@ private:
 
         auto iVar = "i";
         auto jVar = "j";
+        auto kVar = "k"; //for RGB
         
-        auto newVal = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(newValStr),
+        auto overwritePixel = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<VariableExprAST>(kVar)
+            ),
             std::make_unique<BinaryExprAST>(
                 "+", 
                 std::make_unique<BinaryExprAST>(
@@ -188,7 +171,8 @@ private:
                         std::make_unique<ArrayAccessExprAST>(
                             imageName,
                             std::make_unique<VariableExprAST>(iVar),
-                            std::make_unique<VariableExprAST>(jVar)
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<VariableExprAST>(kVar)
                         ),
                         std::make_unique<NumberExprAST>(128)
                     ),
@@ -198,57 +182,24 @@ private:
             )
         );
 
-        std::vector<std::unique_ptr<ExprAST>> ifBody;
-        ifBody.push_back(
-            std::make_unique<AssignExprAST>(
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(0)
-            )
+
+        std::vector<std::unique_ptr<ExprAST>> RGB_Body;
+
+        RGB_Body.push_back(std::move(overwritePixel));
+
+        // RGB loop (k)
+        auto RGB_Loop = std::make_unique<ForExprAST>(
+            kVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<NumberExprAST>(3),
+            std::make_unique<NumberExprAST>(1),
+            std::move(RGB_Body)
         );
 
-        auto lessThanMinIfConfition = std::make_unique<IfExprAST>(
-            std::make_unique<BinaryExprAST>(
-                "<", 
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(0)
-            ),
-            std::move(ifBody),
-            std::vector<std::unique_ptr<ExprAST>>{} //no else
-        );
-
-        std::vector<std::unique_ptr<ExprAST>> ifBody2;
-        ifBody2.push_back(
-            std::make_unique<AssignExprAST>(
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(255)
-            )
-        );
-
-        auto greaterThanMinIfConfition = std::make_unique<IfExprAST>(
-            std::make_unique<BinaryExprAST>(
-                ">", 
-                std::make_unique<VariableExprAST>(newValStr),
-                std::make_unique<NumberExprAST>(255)
-            ),
-            std::move(ifBody2),
-            std::vector<std::unique_ptr<ExprAST>>{} //no else
-        );
-
-        auto overwritePixel = std::make_unique<AssignExprAST>(
-            std::make_unique<ArrayAccessExprAST>(
-                    imageName,
-                    std::make_unique<VariableExprAST>(iVar),
-                    std::make_unique<VariableExprAST>(jVar)
-                ),
-            std::make_unique<VariableExprAST>(newValStr)
-        );
 
         std::vector<std::unique_ptr<ExprAST>> innerBody;
 
-        innerBody.push_back(std::move(newVal));
-        innerBody.push_back(std::move(lessThanMinIfConfition));
-        innerBody.push_back(std::move(greaterThanMinIfConfition));
-        innerBody.push_back(std::move(overwritePixel));
+        innerBody.push_back(std::move(RGB_Loop));
 
         // Inner loop (j)
         auto innerLoop = std::make_unique<ForExprAST>(
@@ -273,13 +224,248 @@ private:
 
         body.push_back(std::move(outerLoop));
 
+        
+
         auto program = std::make_unique<ProgramAST>();
         for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+
+        for (auto &stmt : ImgNormalizationVector)
             program->addStmt(std::move(stmt));
 
         return program;
     }
 
+    std::vector<std::unique_ptr<ExprAST>> ImageNormalization(std::string imageName)
+    {
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector;
+
+        auto minVar = "min";
+        auto maxVar = "max";
+        auto iVar = "i";
+        auto jVar = "j";
+        auto kVar = "k";
+        
+        std::vector<std::unique_ptr<ExprAST>> RGB_Body;
+
+        //happens for every channel
+
+        auto minAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(minVar),
+            std::make_unique<NumberExprAST>(INT_MAX)
+        );
+
+        auto maxAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(minVar),
+            std::make_unique<NumberExprAST>(INT_MIN)
+        );
+
+        RGB_Body.push_back(std::move(minAssign));
+        RGB_Body.push_back(std::move(maxAssign));
+
+        std::vector<std::unique_ptr<ExprAST>> maxIfConditionVector;
+        maxIfConditionVector.push_back(
+            std::move(
+                std::make_unique<AssignExprAST>(
+                    std::make_unique<VariableExprAST>(maxVar),
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<VariableExprAST>(kVar)
+                    )
+                )
+            )
+        );
+        
+
+        auto maxIfCondition = std::make_unique<IfExprAST>(
+            std::move(
+                std::make_unique<BinaryExprAST>(
+                    "<",
+                    std::make_unique<VariableExprAST>(maxVar),
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<VariableExprAST>(kVar)
+                    )
+                )
+            ),
+            std::move(maxIfConditionVector),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> minIfConditionVector;
+        minIfConditionVector.push_back(
+            std::move(
+                std::make_unique<AssignExprAST>(
+                    std::make_unique<VariableExprAST>(minVar),
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<VariableExprAST>(kVar)
+                    )
+                )
+            )
+        );
+
+        auto minIfCondition = std::make_unique<IfExprAST>(
+            std::move(
+                std::make_unique<BinaryExprAST>(
+                    ">",
+                    std::make_unique<VariableExprAST>(minVar),
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<VariableExprAST>(kVar)
+                    )
+                )
+            ),
+            std::move(minIfConditionVector),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody1;
+
+        innerBody1.push_back(std::move(maxIfCondition));
+        innerBody1.push_back(std::move(minIfCondition));
+
+        // Inner loop (j)
+        auto innerLoop1 = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody1)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody1;
+        outerBody1.push_back(std::move(innerLoop1));
+
+        // Outer loop (i)
+        auto outerLoop1 = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody1)
+        );
+
+        RGB_Body.push_back(std::move(outerLoop1));
+
+
+        //normalization body
+
+        //we don't want divide by 0 error, so if min == max, then do max++;
+
+        std::vector<std::unique_ptr<ExprAST>> minMaxEqualityIfConditionVector;
+        minMaxEqualityIfConditionVector.push_back(
+            std::move(
+                std::make_unique<AssignExprAST>(
+                    std::make_unique<VariableExprAST>(maxVar),
+                    std::make_unique<BinaryExprAST>(
+                        "+",
+                        std::make_unique<VariableExprAST>(maxVar),
+                        std::make_unique<NumberExprAST>(1)
+                    )
+                )
+            )
+        );
+        
+        auto minMaxEqualityIfCondition = std::make_unique<IfExprAST>(
+            std::move(
+                std::make_unique<BinaryExprAST>(
+                    "==",
+                    std::make_unique<VariableExprAST>(minVar),
+                    std::make_unique<VariableExprAST>(maxVar)
+                )
+            ),
+            std::move(minMaxEqualityIfConditionVector),
+            std::vector<std::unique_ptr<ExprAST>>{} //no else
+        );
+
+        RGB_Body.push_back(std::move(minMaxEqualityIfCondition));
+
+        auto normalisedPixelAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<VariableExprAST>(kVar)
+            ),
+            std::make_unique<BinaryExprAST>
+            (
+                "*",
+                std::make_unique<NumberExprAST>(255),
+                std::make_unique<BinaryExprAST>(
+                    "/",
+                    std::make_unique<BinaryExprAST>(
+                        "-",
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<VariableExprAST>(kVar)
+                        ),
+                        std::make_unique<VariableExprAST>(minVar)
+                    ),
+                    std::make_unique<BinaryExprAST>(
+                        "-",
+                        std::make_unique<VariableExprAST>(maxVar),
+                        std::make_unique<VariableExprAST>(minVar)
+                    )
+                )
+            )
+        );
+
+        //loop for normalization
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody2;
+
+        innerBody2.push_back(std::move(normalisedPixelAssign));
+
+        // Inner loop (j)
+        auto innerLoop2 = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody2)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody2;
+        outerBody2.push_back(std::move(innerLoop2));
+
+        // Outer loop (i)
+        auto outerLoop2 = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody2)
+        );
+
+        RGB_Body.push_back(std::move(outerLoop2));
+
+        // RJB loop (k)
+        auto RJBLoop = std::make_unique<ForExprAST>(
+            kVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<NumberExprAST>(3),
+            std::make_unique<NumberExprAST>(1),
+            std::move(RGB_Body)
+        );
+
+        ImgNormalizationVector.push_back(std::move(RJBLoop));
+
+        return ImgNormalizationVector;
+    }
 
     std::unique_ptr<ProgramAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
     {
@@ -293,7 +479,9 @@ private:
         auto kernelWidthVar = "kernelWidth";
         auto radiusVar = "radius";
         auto negRadiusVar = "negRadius";
-        auto sumVar = "sum";
+        auto sumVar_r = "sum_r";
+        auto sumVar_g = "sum_g";
+        auto sumVar_b = "sum_b";
         auto countVar = "count";
         //image nested for loop
         auto iVar = "i";
@@ -409,19 +597,52 @@ private:
             std::move(nyInBounds)
         );
 
-        // sum = sum + image[ny][nx]
-        auto sumUpdate = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(sumVar),
+        // sum_r = sum_r + image[ny][nx][0]
+        auto sumUpdate_r = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_r),
             std::make_unique<BinaryExprAST>(
                 "+",
-                std::make_unique<VariableExprAST>(sumVar),
+                std::make_unique<VariableExprAST>(sumVar_r),
                 std::make_unique<ArrayAccessExprAST>(
                     imageName,
                     std::make_unique<VariableExprAST>(nyVar),
-                    std::make_unique<VariableExprAST>(nxVar)
+                    std::make_unique<VariableExprAST>(nxVar),
+                    std::make_unique<NumberExprAST>(0)
                 )
             )
         );
+
+        // sum_g = sum_g + image[ny][nx][0]
+        auto sumUpdate_g = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_g),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(sumVar_g),
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(nyVar),
+                    std::make_unique<VariableExprAST>(nxVar),
+                    std::make_unique<NumberExprAST>(1)
+                )
+            )
+        );
+
+        // sum_b = sum_b + image[ny][nx][0]
+        auto sumUpdate_b = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_b),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<VariableExprAST>(sumVar_b),
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(nyVar),
+                    std::make_unique<VariableExprAST>(nyVar),
+                    std::make_unique<NumberExprAST>(2)
+                )
+            )
+        );
+
+        
 
         // count = count + 1
         auto countUpdate = std::make_unique<AssignExprAST>(
@@ -434,7 +655,9 @@ private:
         );
 
         std::vector<std::unique_ptr<ExprAST>> ifBody;
-        ifBody.push_back(std::move(sumUpdate));
+        ifBody.push_back(std::move(sumUpdate_r));
+        ifBody.push_back(std::move(sumUpdate_g));
+        ifBody.push_back(std::move(sumUpdate_b));
         ifBody.push_back(std::move(countUpdate));
 
         auto ifCondition = std::make_unique<IfExprAST>(
@@ -469,16 +692,47 @@ private:
             std::move(dyBody)
         );
 
-        // sum/count assign to image[i][j]
-        auto assignBlur = std::make_unique<AssignExprAST>(
+        // sum_r/count assign to image[i][j][0]
+        auto assignBlur_r = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
                 imageName,
                 std::make_unique<VariableExprAST>(iVar),
-                std::make_unique<VariableExprAST>(jVar)
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(0)
             ),
             std::make_unique<BinaryExprAST>(
                 "/",
-                std::make_unique<VariableExprAST>(sumVar),
+                std::make_unique<VariableExprAST>(sumVar_r),
+                std::make_unique<VariableExprAST>(countVar)
+            )
+        );
+
+        // sum_g/count assign to image[i][j][1]
+        auto assignBlur_g = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(1)
+            ),
+            std::make_unique<BinaryExprAST>(
+                "/",
+                std::make_unique<VariableExprAST>(sumVar_g),
+                std::make_unique<VariableExprAST>(countVar)
+            )
+        );
+
+        // sum_b/count assign to image[i][j][2]
+        auto assignBlur_b = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(2)
+            ),
+            std::make_unique<BinaryExprAST>(
+                "/",
+                std::make_unique<VariableExprAST>(sumVar_b),
                 std::make_unique<VariableExprAST>(countVar)
             )
         );
@@ -486,7 +740,15 @@ private:
         // inner body (for each pixel)
         std::vector<std::unique_ptr<ExprAST>> innerBody;
         innerBody.push_back(std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(sumVar),
+            std::make_unique<VariableExprAST>(sumVar_r),
+            std::make_unique<NumberExprAST>(0)
+        ));
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_g),
+            std::make_unique<NumberExprAST>(0)
+        ));
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_b),
             std::make_unique<NumberExprAST>(0)
         ));
         innerBody.push_back(std::make_unique<AssignExprAST>(
@@ -494,7 +756,9 @@ private:
             std::make_unique<NumberExprAST>(0)
         ));
         innerBody.push_back(std::move(dyLoop));
-        innerBody.push_back(std::move(assignBlur));
+        innerBody.push_back(std::move(assignBlur_r));
+        innerBody.push_back(std::move(assignBlur_g));
+        innerBody.push_back(std::move(assignBlur_b));
 
         // j loop
         auto jLoop = std::make_unique<ForExprAST>(
@@ -539,8 +803,7 @@ private:
 
         auto thresholdStr = "threshold";
         auto maxValueStr = "maxValue";
-
-        
+        auto greyscaleVarStr = "greyscale";
 
         auto thresholdAssign = std::make_unique<AssignExprAST>(
             std::make_unique<VariableExprAST>(thresholdStr),
@@ -560,37 +823,125 @@ private:
 
         auto condition = std::make_unique<BinaryExprAST>(
             ">", 
-            std::make_unique<ArrayAccessExprAST>(
-                imageName,
-                std::make_unique<VariableExprAST>(iVar),
-                std::make_unique<VariableExprAST>(jVar)
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<BinaryExprAST>(
+                    "*",
+                    std::make_unique<NumberExprAST>(0.299), //Red
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<NumberExprAST>(0)
+                    )
+                ),
+                std::make_unique<BinaryExprAST>(
+                    "+",
+                    std::make_unique<BinaryExprAST>(
+                        "*",
+                        std::make_unique<NumberExprAST>(0.587), //Green
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<NumberExprAST>(1)
+                        )
+                    ),
+                    std::make_unique<BinaryExprAST>(
+                        "*",
+                        std::make_unique<NumberExprAST>(0.114), //Blue
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<NumberExprAST>(2)
+                        )
+                    )
+                )
             ),
             std::make_unique<VariableExprAST>(thresholdStr)
         );
 
-        auto lhsAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<ArrayAccessExprAST>(
-                imageName,
-                std::make_unique<VariableExprAST>(iVar),
-                std::make_unique<VariableExprAST>(jVar)
-            ),
-            std::make_unique<VariableExprAST>(maxValueStr)
-        );
-
-        auto rhsAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<ArrayAccessExprAST>(
-                imageName,
-                std::make_unique<VariableExprAST>(iVar),
-                std::make_unique<VariableExprAST>(jVar)
-            ),
-            std::make_unique<NumberExprAST>(0)
-        );
+        // auto condition = std::make_unique<BinaryExprAST>(
+        //     ">", 
+        //     std::make_unique<ArrayAccessExprAST>(
+        //         imageName,
+        //         std::make_unique<VariableExprAST>(iVar),
+        //         std::make_unique<VariableExprAST>(jVar)
+        //     ),
+        //     std::make_unique<VariableExprAST>(thresholdStr)
+        // );
 
         std::vector<std::unique_ptr<ExprAST>> thenBody;
-        thenBody.push_back(std::move(lhsAssign));
+        thenBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(0)
+                ),
+                std::make_unique<VariableExprAST>(maxValueStr)
+            )
+        );
+        thenBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(1)
+                ),
+                std::make_unique<VariableExprAST>(maxValueStr)
+            )
+        );
+        thenBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(2)
+                ),
+                std::make_unique<VariableExprAST>(maxValueStr)
+            )
+        );
+
 
         std::vector<std::unique_ptr<ExprAST>> elseBody;
-        elseBody.push_back(std::move(rhsAssign));
+        elseBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(0)
+                ),
+                std::make_unique<NumberExprAST>(0)
+            )
+        );
+        elseBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(1)
+                ),
+                std::make_unique<NumberExprAST>(0)
+            )
+        );
+        elseBody.push_back(
+            std::make_unique<AssignExprAST>(
+                std::make_unique<ArrayAccessExprAST>(
+                    imageName,
+                    std::make_unique<VariableExprAST>(iVar),
+                    std::make_unique<VariableExprAST>(jVar),
+                    std::make_unique<NumberExprAST>(2)
+                ),
+                std::make_unique<NumberExprAST>(0)
+            )
+        );
 
         auto ifElseConfition = std::make_unique<IfExprAST>(
             std::move(condition),
@@ -598,7 +949,6 @@ private:
             std::move(elseBody)
         );
         
-
         std::vector<std::unique_ptr<ExprAST>> innerBody;
         innerBody.push_back(std::move(ifElseConfition));
 
@@ -626,7 +976,13 @@ private:
         body.push_back(std::move(outerLoop));
 
         auto program = std::make_unique<ProgramAST>();
+
         for (auto &stmt : body)
+            program->addStmt(std::move(stmt));
+
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+
+        for (auto &stmt : ImgNormalizationVector)
             program->addStmt(std::move(stmt));
 
         return program;
@@ -702,14 +1058,15 @@ private:
             return std::make_unique<NumberExprAST>(val);
         }
 
-        // Case 2: Pixel access like img[x][y]
-        if (ctx->ID() && ctx->expr().size() == 2)
+        // Case 2: Pixel access like img[x][y][z]
+        if (ctx->ID() && ctx->expr().size() == 3)
         {
             std::string imageName = ctx->ID()->getText();
-            auto xExpr = buildExpr(ctx->expr(0));  // first index
-            auto yExpr = buildExpr(ctx->expr(1));  // second index
+            auto Expr1 = buildExpr(ctx->expr(0));  // first index
+            auto Expr2 = buildExpr(ctx->expr(1));  // second index
+            auto Expr3 = buildExpr(ctx->expr(2));  // third index
 
-            return std::make_unique<ArrayAccessExprAST>(imageName, std::move(xExpr), std::move(yExpr));
+            return std::make_unique<ArrayAccessExprAST>(imageName, std::move(Expr1), std::move(Expr2), std::move(Expr3));
         }
 
         // Case 3: Simple variable
@@ -748,11 +1105,12 @@ private:
         // Use buildExpr for indices
         auto index1 = buildExpr(ctx->expr(0));
         auto index2 = buildExpr(ctx->expr(1));
+        auto index3 = buildExpr(ctx->expr(2));
 
         auto valueExpr = buildExpr(ctx->expr(2));
 
         // LHS: ArrayAccessExprAST
-        auto lhs = std::make_unique<ArrayAccessExprAST>(imageName, std::move(index1), std::move(index2));
+        auto lhs = std::make_unique<ArrayAccessExprAST>(imageName, std::move(index1), std::move(index2), std::move(index3));
 
         // Assignment node
         return std::make_unique<AssignExprAST>(std::move(lhs), std::move(valueExpr));

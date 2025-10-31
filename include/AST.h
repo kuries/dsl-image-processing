@@ -111,17 +111,18 @@ class ArrayAccessExprAST : public ExprAST {
     std::string ArrayName;
     
 public:
-    std::unique_ptr<ExprAST> Index1, Index2;
-    ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2)
-        : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index2(std::move(Index2)) {}
+    std::unique_ptr<ExprAST> Index1, Index2, Index3;
+    ArrayAccessExprAST(std::string ArrayName, std::unique_ptr<ExprAST> Index1, std::unique_ptr<ExprAST> Index2, std::unique_ptr<ExprAST> Index3)
+        : ArrayName(std::move(ArrayName)), Index1(std::move(Index1)), Index3(std::move(Index3)){}
     const std::string &getName() const { return ArrayName; }
 
     void print(int indent = 0) const override {
-        if(ArrayName != "" && Index1 != nullptr && Index2 != nullptr)
+        if(ArrayName != "" && Index1 != nullptr && Index2 != nullptr && Index3 != nullptr)
         {
             std::cout << std::string(indent, ' ') << "ArrayAccessExprAST " << ArrayName << "[]";
             Index1->print(indent + 2);
             Index2->print(indent + 2);
+            Index3->print(indent + 2);
         }
         else
         {
