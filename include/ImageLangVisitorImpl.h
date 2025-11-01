@@ -260,10 +260,10 @@ private:
         for (auto &stmt : body)
             stmtList.push_back(std::move(stmt));
         //need to do normalization
-        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
-        // for (auto &stmt : ImgNormalizationVector)
-        //     stmtList.push_back(std::move(stmt));
+        for (auto &stmt : ImgNormalizationVector)
+            stmtList.push_back(std::move(stmt));
         
 
         return stmtList;
@@ -365,10 +365,10 @@ private:
             stmtList.push_back(std::move(stmt));
 
         //need to do normalization
-        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
-        // for (auto &stmt : ImgNormalizationVector)
-        //     stmtList.push_back(std::move(stmt));
+        for (auto &stmt : ImgNormalizationVector)
+            stmtList.push_back(std::move(stmt));
         
         return stmtList;
     }
@@ -387,13 +387,13 @@ private:
 
         //happens for every channel
 
-        auto minAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(minVar),
+        auto minAssign = std::make_unique<VarDeclExprAST>(
+            (minVar),
             std::make_unique<NumberExprAST>(INT_MAX)
         );
 
-        auto maxAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(minVar),
+        auto maxAssign = std::make_unique<VarDeclExprAST>(
+            (minVar),
             std::make_unique<NumberExprAST>(INT_MIN)
         );
 
