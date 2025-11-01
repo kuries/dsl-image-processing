@@ -168,7 +168,12 @@ llvm::Value *VariableExprAST::codegen() {
   // Look this variable up in the function.
   llvm::AllocaInst *A = NamedValues[Name];
   if (!A)
-    return Helper::LogErrorV("Unknown variable name");
+  {
+	std::string errorStr = "Unknown variable name " + Name;
+	return Helper::LogErrorV(errorStr.c_str());
+
+  }
+    
 
   // Load the value.
   return Builder.CreateLoad(A->getAllocatedType(), A, Name.c_str());
@@ -190,22 +195,22 @@ llvm::Value *VarDeclExprAST::codegen() {
 
 llvm::Value *BinaryExprAST::codegen() {
 	// Special case '=' because we don't want to emit the LHS as an expression.
-	if (Op == "=") {
+		if (Op == "=") {
 		// Assignment requires the LHS to be an identifier.
 		VariableExprAST *LHSE = static_cast<VariableExprAST *>(LHS.get());
 		if (!LHSE)
 			return Helper::LogErrorV("destination of '=' must be a variable");
-			
-		// Codegen the RHS.
+
+				// Codegen the RHS.
 		llvm::Value *Val = RHS->codegen();
 		if (!Val)
 			return nullptr;
-
+		
 		// Look up the name.
 		llvm::Value *Variable = NamedValues[LHSE->getName()];
 		if (!Variable)
 			return Helper::LogErrorV("Unknown variable name");
-
+		
 		Builder.CreateStore(Val, Variable);
 		return Val;
 	}
@@ -216,23 +221,69 @@ llvm::Value *BinaryExprAST::codegen() {
 		return nullptr;
 
 	if (Op == "+")
-	{
-		return Builder.CreateFAdd(L, R, "addtmp");
-	}
-	else if (Op == "+")
-	{
-		return Builder.CreateFSub(L, R, "subtmp");
-	}
-	else if(Op == "*")
-	{
-		return Builder.CreateFMul(L, R, "multmp");
-	}
-	else if(Op == "<")
-	{
-		L = Builder.CreateFCmpULT(L, R, "cmptmp");
-		// Convert bool 0/1 to double 0.0 or 1.0
-		return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext), "booltmp");
-	}
+        return Builder.CreateFAdd(L, R, "addtmp");
+    else if (Op == "-")
+        return Builder.CreateFSub(L, R, "subtmp");
+    else if (Op == "*")
+        return Builder.CreateFMul(L, R, "multmp");
+    else if (Op == "/")
+        return Builder.CreateFDiv(L, R, "divtmp");
+    else if (Op == "%")
+        return Builder.CreateFRem(L, R, "modtmp");
+
+    // Comparisons (return double 0.0 or 1.0)
+    else if (Op == "<") {
+        llvm::Value *Cmp = Builder.CreateFCmpULT(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    } 
+    else if (Op == "<=") {
+        llvm::Value *Cmp = Builder.CreateFCmpULE(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+    else if (Op == ">") {
+        llvm::Value *Cmp = Builder.CreateFCmpUGT(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+    else if (Op == ">=") {
+        llvm::Value *Cmp = Builder.CreateFCmpUGE(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+    else if (Op == "==") {
+        llvm::Value *Cmp = Builder.CreateFCmpUEQ(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+    else if (Op == "!=") {
+        llvm::Value *Cmp = Builder.CreateFCmpUNE(L, R, "cmptmp");
+        return Builder.CreateUIToFP(Cmp, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+
+    // Logical operators (assuming nonzero means true)
+    else if (Op == "&&") {
+        llvm::Value *LCond = Builder.CreateFCmpONE(
+            L, llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0)), "lcond");
+        llvm::Value *RCond = Builder.CreateFCmpONE(
+            R, llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0)), "rcond");
+        llvm::Value *AndVal = Builder.CreateAnd(LCond, RCond, "andtmp");
+        return Builder.CreateUIToFP(AndVal, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    } 
+    else if (Op == "||") {
+        llvm::Value *LCond = Builder.CreateFCmpONE(
+            L, llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0)), "lcond");
+        llvm::Value *RCond = Builder.CreateFCmpONE(
+            R, llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0)), "rcond");
+        llvm::Value *OrVal = Builder.CreateOr(LCond, RCond, "ortmp");
+        return Builder.CreateUIToFP(OrVal, llvm::Type::getDoubleTy(TheContext), "booltmp");
+    }
+
+    // Bitwise (if your language allows it, usually for ints)
+    else if (Op == "&")
+        return Builder.CreateAnd(L, R, "andtmp");
+    else if (Op == "|")
+        return Builder.CreateOr(L, R, "ortmp");
+    else if (Op == "^")
+        return Builder.CreateXor(L, R, "xortmp");
+
+    return Helper::LogErrorV("Invalid binary operator");
 }
 
 llvm::Value *IfExprAST::codegen() {
