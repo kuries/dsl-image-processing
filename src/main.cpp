@@ -5,6 +5,8 @@
 #include "ImageRuntime.h"
 #include "Mem2RegPass.h"
 #include "CSEPass.h"
+#include "ConstantFoldingPass.h"
+#include "CopyPropagationPass.h"
 #include "AST.h"
 #include <fstream>
 #include <iostream>
@@ -105,6 +107,10 @@ int main(int argc, const char* argv[])
 
     bool enableMem2RegOpt = true;
     bool enableCSE = true;
+    bool enableConstantFolding = true;
+    bool enableCopyPropagation = true;
+
+    std::cerr << "Input file path: " << argv[1] << std::endl;
 
     if (argc >= 3) { // we expect: ./image-dsl <file> -opt=true/false
         for(int i = 2; i < argc; i++)
@@ -118,8 +124,15 @@ int main(int argc, const char* argv[])
                 enableCSE = false;
             else if (optArg == "-cse=true")
                 enableCSE = true;
+            else if (optArg == "-cf=false")
+                enableConstantFolding = false;
+            else if (optArg == "-cf=true")
+                enableConstantFolding = true;
+            else if (optArg == "-copyprop=false")
+                enableCopyPropagation = false;
+            else if (optArg == "-copyprop=true")
+                enableCopyPropagation = true;
         }
-        
     }
 
     // Initialize LLVM target for JIT
@@ -191,15 +204,29 @@ int main(int argc, const char* argv[])
     // After Mem2Reg
     if (enableMem2RegOpt) {
         runFunctionPassOnModule(*TheModule, MyMem2RegPass(), "Mem2Reg");
-        // printModuleIR(*TheModule, "After Mem2Reg");
+        //printModuleIR(*TheModule, "After Mem2Reg");
         verifyModuleIR(*TheModule, "After Mem2Reg");
+    }
+
+    //After Constant Folding
+    if (enableConstantFolding) {
+        runFunctionPassOnModule(*TheModule, ConstantFoldingPass(), "Constant Folding");
+        //printModuleIR(*TheModule, "Before Constant Folding");
+        verifyModuleIR(*TheModule, "After Constant Folding");
     }
 
     // After CSE
     if (enableCSE) {
-        runFunctionPassOnModule(*TheModule, GlobalCSEPass(), "CSE");
-        // printModuleIR(*TheModule, "After GlobalCSE");
-        verifyModuleIR(*TheModule, "After GlobalCSE");
+        runFunctionPassOnModule(*TheModule, GlobalCSEPass(), "Common SubExpression Elimination");
+        //printModuleIR(*TheModule, "Before Common SubExpression Elimination");
+        verifyModuleIR(*TheModule, "After Common SubExpression Elimination");
+    }
+
+    // After Copy Propagation
+    if (enableCopyPropagation) {
+        runFunctionPassOnModule(*TheModule, CopyPropagationPass(), "Common Copy Propagation");
+        //printModuleIR(*TheModule, "Before Copy Propagation");
+        verifyModuleIR(*TheModule, "After Copy Propagation");
     }
 
 
