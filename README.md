@@ -17,5 +17,5 @@ cmake --build .
 
 cd build
 ./image-dsl ../test/sample.imgdsl 
-./image-dsl ../test/sample.imgdsl -opt=false
-./image-dsl ../test/sample.imgdsl -opt=true
+./image-dsl ../test/sample.imgdsl -mem2reg=true -cse=true
+./image-dsl ../test/sample.imgdsl -cse=false

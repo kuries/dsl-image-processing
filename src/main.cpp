@@ -4,6 +4,7 @@
 #include "ImageLangVisitorImpl.h"   
 #include "ImageRuntime.h"
 #include "Mem2RegPass.h"
+#include "CSEPass.h"
 #include "AST.h"
 #include <fstream>
 #include <iostream>
@@ -29,21 +30,87 @@ void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "
     for (size_t i = 0; i < children.size(); ++i) {
         printParseTree(children[i], indent + (last ? "  " : "│ "), i == children.size() - 1);
     }
-
-
 }
+
+inline void printModuleIR(const llvm::Module &M, const std::string &title = "") {
+    std::cout << "\n--------------------------------------------------------------------\n";
+    if (!title.empty())
+        std::cout << "Printing the LLVM IR " << title << ":\n";
+    else
+        std::cout << "Printing the LLVM IR:\n";
+    std::cout << "--------------------------------------------------------------------\n";
+    M.print(llvm::errs(), nullptr);
+    std::cout << "\n--------------------------------------------------------------------\n";
+}
+
+inline void verifyModuleIR(const llvm::Module &M, const std::string &context = "") {
+    std::cout << "\nVerifying Module";
+    if (!context.empty()) std::cout << " (" << context << ")";
+    std::cout << "...\n";
+
+    if (llvm::verifyModule(M, &llvm::errs())) {
+        llvm::errs() << "IR verification failed";
+        if (!context.empty()) llvm::errs() << " after " << context;
+        llvm::errs() << "!\n";
+    } else {
+        std::cout << "Module verification succeeded";
+        if (!context.empty()) std::cout << " after " << context;
+        std::cout << ".\n";
+    }
+
+    std::cout << "--------------------------------------------------------------------\n";
+}
+
+template <typename PassType>
+void runFunctionPassOnModule(llvm::Module &M, PassType &&Pass, const std::string &PassName) {
+    using namespace llvm;
+
+    // Create the analysis managers and register analyses
+    PassBuilder PB;
+    LoopAnalysisManager LAM;
+    FunctionAnalysisManager FAM;
+    CGSCCAnalysisManager CGAM;
+    ModuleAnalysisManager MAM;
+
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+    // Create a function pass manager
+    FunctionPassManager FPM;
+    FPM.addPass(std::forward<PassType>(Pass));
+
+    // Run the pass on each function
+    for (Function &F : M) {
+        if (!F.isDeclaration())
+            FPM.run(F, FAM);
+    }
+}
+
+
 
 int main(int argc, const char* argv[])
 {
 
-    bool enableOpt = false;
+    bool enableMem2RegOpt = true;
+    bool enableCSE = true;
 
     if (argc >= 3) { // we expect: ./image-dsl <file> -opt=true/false
-        std::string optArg = argv[2];
-        if (optArg == "-opt=true")
-            enableOpt = true;
-        else if (optArg == "-opt=false")
-            enableOpt = false;
+        for(int i = 2; i < argc; i++)
+        {
+            std::string optArg = argv[i];
+            if (optArg == "-mem2reg=true")
+                enableMem2RegOpt = true;
+            else if (optArg == "-mem2reg=false")
+                enableMem2RegOpt = false;
+            else if (optArg == "-cse=false")
+                enableCSE = false;
+            else if (optArg == "-cse=true")
+                enableCSE = true;
+        }
+        
     }
 
     // Initialize LLVM target for JIT
@@ -97,65 +164,24 @@ int main(int argc, const char* argv[])
     std::cout<<"Codegen : \n";
 
     programAST->codegen();
-    std::cout<<"\n--------------------------------------------------------------------\n";
-    std::cout<<"Printing the LLVM IR : \n";
 
-    TheModule->print(llvm::errs(), nullptr);
 
-    std::cout<<"\n--------------------------------------------------------------------\n";
-    llvm::Module* m = TheModule.get();
-    if (llvm::verifyModule(*m, &llvm::errs())) {
-        llvm::errs() << "IR verification failed!\n";
+    printModuleIR(*TheModule, "Before Optimization");
+    verifyModuleIR(*TheModule, "Before Optimization");
+
+    // After Mem2Reg
+    if (enableMem2RegOpt) {
+        runFunctionPassOnModule(*TheModule, MyMem2RegPass(), "Mem2Reg");
+        printModuleIR(*TheModule, "After Mem2Reg");
+        verifyModuleIR(*TheModule, "After Mem2Reg");
     }
 
-    std::cout<<"\n--------------------------------------------------------------------\n";
-
-    if(enableOpt)
-    {
-    // ======== Apply Mem2RegPass via PassManager ========
-        {
-            llvm::PassBuilder PB;
-            llvm::LoopAnalysisManager LAM;
-            llvm::FunctionAnalysisManager FAM;
-            llvm::CGSCCAnalysisManager CGAM;
-            llvm::ModuleAnalysisManager MAM;
-
-            // Register built-in analyses
-            PB.registerModuleAnalyses(MAM);
-            PB.registerCGSCCAnalyses(CGAM);
-            PB.registerFunctionAnalyses(FAM);
-            PB.registerLoopAnalyses(LAM);
-            PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-            // Create a FunctionPassManager and add your plugin pass
-            llvm::FunctionPassManager FPM;
-            FPM.addPass(MyMem2RegPass()); // You defined this in your plugin .so
-
-            // Run it on all functions in your module
-            for (llvm::Function &F : *TheModule) {
-                if (!F.isDeclaration())
-                    FPM.run(F, FAM);
-            }
-        }
-
-        std::cout<<"Printing the LLVM IR after Mem2Reg Transformation pass: \n";
-
-        TheModule->print(llvm::errs(), nullptr);
-
-        llvm::Module* m = TheModule.get();
-
-        std::cout<<"\n\n\n";
-        if (llvm::verifyModule(*m, &llvm::errs())) {
-            llvm::errs() << "IR verification failed!\n";
-        }
-
-    std::cout<<"\n--------------------------------------------------------------------\n";
-
-        // =================================================
+    // After CSE
+    if (enableCSE) {
+        runFunctionPassOnModule(*TheModule, GlobalCSEPass(), "CSE");
+        printModuleIR(*TheModule, "After GlobalCSE");
+        verifyModuleIR(*TheModule, "After GlobalCSE");
     }
-     
-
-
 
 
     auto TheContextPtr = std::make_unique<llvm::LLVMContext>();
