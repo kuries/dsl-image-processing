@@ -66,16 +66,20 @@ class Helper{
             return Builder.CreateTrunc(asInt32, Builder.getInt8Ty(), "asInt8");
         }
 
-        static llvm::Value* ComputeIndex(std::string ArrayName, llvm::Value* i, llvm::Value* j){
+        static llvm::Value* ComputeIndex(std::string ArrayName, llvm::Value* i, llvm::Value* j, llvm::Value* k){
             llvm::AllocaInst *heightA = NamedValues[ArrayName+".height"];
 	        llvm::AllocaInst *widthA = NamedValues[ArrayName+".width"];
 
             llvm::Value *h = Builder.CreateLoad(heightA->getAllocatedType(), heightA, ArrayName+".height");
             llvm::Value *w = Builder.CreateLoad(widthA->getAllocatedType(), widthA, ArrayName+".width");
+            llvm::Value* channels = llvm::ConstantFP::get(TheContext, llvm::APFloat(3.0));
+
+            // Compute (i * width + j) * 3
             llvm::Value *rowOffset = Builder.CreateFMul(i, w, "rowOffset");
-            // Compute i * width + j
-            llvm::Value *index1D = Builder.CreateFAdd(rowOffset, j, "index1D");
-            Helper::printDouble(index1D);
+            llvm::Value *index = Builder.CreateFAdd(rowOffset, j, "index");
+            llvm::Value *startIndexWithChannels = Builder.CreateFMul(index, channels, "startIndex");
+
+            llvm::Value* index1D = Builder.CreateFAdd(startIndexWithChannels, k, "index1D");
             return index1D;
         }
 

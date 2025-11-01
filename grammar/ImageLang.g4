@@ -35,7 +35,7 @@ saveStmt
 
 // ===== Pixel assignment =====
 pixelAssign
-    : ID '[' expr ']' '[' expr ']' '=' expr ';'
+    : ID '[' expr ']' '[' expr ']' '[' expr ']' '=' expr ';'
     ;
 
 // ===== Numeric variable declarations =====
