@@ -310,11 +310,13 @@ llvm::Value *IfExprAST::codegen() {
 	Builder.SetInsertPoint(ThenBB);
 	if(Then.empty())
 		return nullptr;
-	for(int i=0; i<Then.size()-1; i++)
-		Then[i]->codegen();
-	llvm::Value *ThenV = Then.back()->codegen();
-	if(!ThenV)
-		return nullptr;
+	for(int i=0; i<Then.size(); i++){
+		llvm::Value* ret = Then[i]->codegen();
+		if(!ret)
+			return nullptr;
+	}
+	//dummy return
+	llvm::Value *ThenV = llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0));
 
 	Builder.CreateBr(MergeBB);
 	// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
@@ -322,18 +324,18 @@ llvm::Value *IfExprAST::codegen() {
 	// Emit else block.
 	TheFunction->insert(TheFunction->end(), ElseBB);
 	Builder.SetInsertPoint(ElseBB);
-	llvm::Value *ElseV;
 	if(!Else.empty())
 	{
-		for(int i=0; i<Else.size()-1; i++)
-		Else[i]->codegen();
-		ElseV = Else.back()->codegen();
-		if (!ElseV)
-			return nullptr;
+		for(int i=0; i<Else.size(); i++)
+		{
+			llvm::Value* ret = Else[i]->codegen();
+			if (!ret)
+				return nullptr;
+		}
 	}
-	else{
-		ElseV = llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0));
-	}
+
+	//dummy return
+	llvm::Value *ElseV = llvm::ConstantFP::get(TheContext, llvm::APFloat(0.0));
 
 	Builder.CreateBr(MergeBB);
 	// Codegen of 'Else' can change the current block, update ElseBB for the PHI.

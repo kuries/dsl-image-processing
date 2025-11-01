@@ -80,7 +80,6 @@ class Helper{
             llvm::Value *startIndexWithChannels = Builder.CreateFMul(index, channels, "startIndex");
 
             llvm::Value* index1D = Builder.CreateFAdd(startIndexWithChannels, k, "index1D");
-            Helper::printDouble(index1D);
             return index1D;
         }
 
