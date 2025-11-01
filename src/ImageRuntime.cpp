@@ -34,7 +34,7 @@ extern "C" void save_image(Image* img, double* image_data, const char* path) {
     uint8_t* buffer = new uint8_t[img->width * img->height * 3];
 
     // Convert and clamp each pixel
-    for (int i = 0; i < img->width * img->height; ++i) {
+    for (int i = 0; i < img->width * img->height * 3; ++i) {
         buffer[i] = static_cast<uint8_t>(std::clamp(image_data[i], 0.0, 255.0));
     }
 
@@ -83,8 +83,8 @@ extern "C" double* get_image_data(Image* img) {
     }
 
     // Allocate flat double array on heap
-    double* image = new double[img->width * img->height];
-    for (int i = 0; i < img->width * img->height; ++i) {
+    double* image = new double[img->width * img->height * 3];
+    for (int i = 0; i < img->width * img->height * 3; ++i) {
         image[i] = static_cast<double>(img->data[i]);
     }
 

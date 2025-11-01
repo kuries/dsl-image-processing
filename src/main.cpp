@@ -3,9 +3,16 @@
 #include "ImageLangParser.h"
 #include "ImageLangVisitorImpl.h"   
 #include "ImageRuntime.h"
+#include "Mem2RegPass.h"
 #include "AST.h"
 #include <fstream>
 #include <iostream>
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include "llvm/IR/Dominators.h"
 
 // Recursive pretty printer
 void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "", bool last = true) {
@@ -28,6 +35,17 @@ void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "
 
 int main(int argc, const char* argv[])
 {
+
+    bool enableOpt = false;
+
+    if (argc >= 3) { // we expect: ./image-dsl <file> -opt=true/false
+        std::string optArg = argv[2];
+        if (optArg == "-opt=true")
+            enableOpt = true;
+        else if (optArg == "-opt=false")
+            enableOpt = false;
+    }
+
     // Initialize LLVM target for JIT
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -52,6 +70,7 @@ int main(int argc, const char* argv[])
 
     //Load DSL from stream
     std::ifstream stream(argv[1]);
+
     antlr4::ANTLRInputStream inputStream(stream);
     ImageLangLexer lexer(&inputStream);
     antlr4::CommonTokenStream tokens(&lexer);
@@ -84,6 +103,60 @@ int main(int argc, const char* argv[])
     TheModule->print(llvm::errs(), nullptr);
 
     std::cout<<"\n--------------------------------------------------------------------\n";
+    llvm::Module* m = TheModule.get();
+    if (llvm::verifyModule(*m, &llvm::errs())) {
+        llvm::errs() << "IR verification failed!\n";
+    }
+
+    std::cout<<"\n--------------------------------------------------------------------\n";
+
+    if(enableOpt)
+    {
+    // ======== Apply Mem2RegPass via PassManager ========
+        {
+            llvm::PassBuilder PB;
+            llvm::LoopAnalysisManager LAM;
+            llvm::FunctionAnalysisManager FAM;
+            llvm::CGSCCAnalysisManager CGAM;
+            llvm::ModuleAnalysisManager MAM;
+
+            // Register built-in analyses
+            PB.registerModuleAnalyses(MAM);
+            PB.registerCGSCCAnalyses(CGAM);
+            PB.registerFunctionAnalyses(FAM);
+            PB.registerLoopAnalyses(LAM);
+            PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+            // Create a FunctionPassManager and add your plugin pass
+            llvm::FunctionPassManager FPM;
+            FPM.addPass(MyMem2RegPass()); // You defined this in your plugin .so
+
+            // Run it on all functions in your module
+            for (llvm::Function &F : *TheModule) {
+                if (!F.isDeclaration())
+                    FPM.run(F, FAM);
+            }
+        }
+
+        std::cout<<"Printing the LLVM IR after Mem2Reg Transformation pass: \n";
+
+        TheModule->print(llvm::errs(), nullptr);
+
+        llvm::Module* m = TheModule.get();
+
+        std::cout<<"\n\n\n";
+        if (llvm::verifyModule(*m, &llvm::errs())) {
+            llvm::errs() << "IR verification failed!\n";
+        }
+
+    std::cout<<"\n--------------------------------------------------------------------\n";
+
+        // =================================================
+    }
+     
+
+
+
 
     auto TheContextPtr = std::make_unique<llvm::LLVMContext>();
     auto TSM = llvm::orc::ThreadSafeModule(std::move(TheModule), std::move(TheContextPtr));

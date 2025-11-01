@@ -20,6 +20,12 @@ public:
             auto stmt = buildStatement(stmtCtx);
             if (stmt)
                 program->addStmt(std::move(stmt));
+            else
+            {
+                auto stmts = buildFunctionStatement(stmtCtx);
+                for(int i=0; i<stmts.size(); i++)
+                    program->addStmt(std::move(stmts[i]));
+            }
         }
         return program;
     }
@@ -32,15 +38,18 @@ private:
         if (ctx->pixelAssign())             return buildPixelAssign(ctx->pixelAssign());
         if (ctx->numDecl())                 return buildNumDecl(ctx->numDecl());
         if (ctx->numAssign())               return buildNumAssign(ctx->numAssign());
-        if (ctx->applyThreshold())          return buildApplyThreshold(ctx->applyThreshold());
-        if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
-        if (ctx->applyAdjustBrightness())   return buildApplyBrightnessAdjust(ctx->applyAdjustBrightness());
-        if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
-        std::cout<<"Gotcha !\n";
         return nullptr;
     }
 
-    std::unique_ptr<ProgramAST> buildApplyBrightnessAdjust(ImageLangParser::ApplyAdjustBrightnessContext *ctx)
+    std::vector<std::unique_ptr<ExprAST>> buildFunctionStatement(ImageLangParser::StatementContext *ctx) {
+        // if (ctx->applyThreshold())          return buildApplyThreshold(ctx->applyThreshold());
+        // if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
+        if (ctx->applyAdjustBrightness())   return buildApplyBrightnessAdjust(ctx->applyAdjustBrightness());
+        // if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
+        return std::vector<std::unique_ptr<ExprAST>>{};
+    }
+
+    std::vector<std::unique_ptr<ExprAST>> buildApplyBrightnessAdjust(ImageLangParser::ApplyAdjustBrightnessContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -51,12 +60,18 @@ private:
         auto brightnessStr = "brightness";
         auto newValStr = "newVal";
 
-        auto brightnessAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(brightnessStr),
+        auto brightnessAssign = std::make_unique<VarDeclExprAST>(
+            brightnessStr,
             std::move(brightnessExpr)
         );
 
+        auto newValAssign = std::make_unique<VarDeclExprAST>(
+            newValStr,
+            std::make_unique<NumberExprAST>(0)
+        );
+
         body.push_back(std::move(brightnessAssign));
+        body.push_back(std::move(newValAssign));
 
         auto iVar = "i";
         auto jVar = "j";
@@ -100,7 +115,7 @@ private:
         auto innerLoop = std::make_unique<ForExprAST>(
             jVar,
             std::make_unique<NumberExprAST>(0),
-            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
             std::make_unique<NumberExprAST>(1),
             std::move(innerBody)
         );
@@ -119,18 +134,19 @@ private:
 
         body.push_back(std::move(outerLoop));
 
-        //need to do normalization
+        
+        std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
 
-        auto program = std::make_unique<ProgramAST>();
         for (auto &stmt : body)
-            program->addStmt(std::move(stmt));
+            stmtList.push_back(std::move(stmt));
+        //need to do normalization
+        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
-        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+        // for (auto &stmt : ImgNormalizationVector)
+        //     stmtList.push_back(std::move(stmt));
+        
 
-        for (auto &stmt : ImgNormalizationVector)
-            program->addStmt(std::move(stmt));
-
-        return program;
+        return stmtList;
     }
 
     std::unique_ptr<ProgramAST> buildApplyContrastAdjust(ImageLangParser::ApplyAdjustContrastContext *ctx)
