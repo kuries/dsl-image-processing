@@ -16,4 +16,4 @@ input.save("/workspace/dsl-image-processing/build/output.jpg");
 
 adjust_brightness(input , 100);
 
-//adjust_contrast(input , 100);
+adjust_contrast(input , 100);

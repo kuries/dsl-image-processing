@@ -42,10 +42,10 @@ private:
     }
 
     std::vector<std::unique_ptr<ExprAST>> buildFunctionStatement(ImageLangParser::StatementContext *ctx) {
-        // if (ctx->applyThreshold())          return buildApplyThreshold(ctx->applyThreshold());
-        // if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
+        if (ctx->applyThreshold())          return buildApplyThreshold(ctx->applyThreshold());
+        if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
         if (ctx->applyAdjustBrightness())   return buildApplyBrightnessAdjust(ctx->applyAdjustBrightness());
-        // if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
+        if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
         return std::vector<std::unique_ptr<ExprAST>>{};
     }
 
@@ -64,13 +64,7 @@ private:
             std::move(brightnessExpr)
         );
 
-        auto newValAssign = std::make_unique<VarDeclExprAST>(
-            newValStr,
-            std::make_unique<NumberExprAST>(0)
-        );
-
         body.push_back(std::move(brightnessAssign));
-        body.push_back(std::move(newValAssign));
 
         auto iVar = "i";
         auto jVar = "j";
@@ -133,7 +127,6 @@ private:
 
         body.push_back(std::move(outerLoop));
 
-        
         std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
 
         for (auto &stmt : body)
@@ -148,7 +141,7 @@ private:
         return stmtList;
     }
 
-    std::unique_ptr<ProgramAST> buildApplyContrastAdjust(ImageLangParser::ApplyAdjustContrastContext *ctx)
+    std::vector<std::unique_ptr<ExprAST>> buildApplyContrastAdjust(ImageLangParser::ApplyAdjustContrastContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -238,18 +231,17 @@ private:
 
         body.push_back(std::move(outerLoop));
 
-        
+       std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
 
-        auto program = std::make_unique<ProgramAST>();
         for (auto &stmt : body)
-            program->addStmt(std::move(stmt));
+            stmtList.push_back(std::move(stmt));
 
-        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+        //need to do normalization
+        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
-        for (auto &stmt : ImgNormalizationVector)
-            program->addStmt(std::move(stmt));
-
-        return program;
+        // for (auto &stmt : ImgNormalizationVector)
+        //     stmtList.push_back(std::move(stmt));
+        
     }
 
     std::vector<std::unique_ptr<ExprAST>> ImageNormalization(std::string imageName)
@@ -481,7 +473,7 @@ private:
         return ImgNormalizationVector;
     }
 
-    std::unique_ptr<ProgramAST> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
+    std::vector<std::unique_ptr<ExprAST>> buildApplyBoxBlur(ImageLangParser::ApplyBoxBlurContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -797,16 +789,17 @@ private:
 
         body.push_back(std::move(iLoop));
 
-        auto program = std::make_unique<ProgramAST>();
-        for (auto &stmt : body)
-            program->addStmt(std::move(stmt));
+        std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
 
-        return program;
+        for (auto &stmt : body)
+            stmtList.push_back(std::move(stmt));
+
+        //we don't need normalization
+
+        return stmtList;
     }
 
-
-
-    std::unique_ptr<ProgramAST> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
+    std::vector<std::unique_ptr<ExprAST>> buildApplyThreshold(ImageLangParser::ApplyThresholdContext *ctx)
     {
         std::vector<std::unique_ptr<ExprAST>> body;
 
@@ -990,15 +983,18 @@ private:
 
         auto program = std::make_unique<ProgramAST>();
 
+        std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
+
         for (auto &stmt : body)
-            program->addStmt(std::move(stmt));
+            stmtList.push_back(std::move(stmt));
 
-        std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
+        //need to do normalization
+        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
-        for (auto &stmt : ImgNormalizationVector)
-            program->addStmt(std::move(stmt));
+        // for (auto &stmt : ImgNormalizationVector)
+        //     stmtList.push_back(std::move(stmt));
 
-        return program;
+        return stmtList;
     }
 
     // Entry point for building expressions

@@ -7,6 +7,7 @@
 #include "AST.h"
 #include <fstream>
 #include <iostream>
+#include <chrono>
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -71,9 +72,19 @@ int main(int argc, const char* argv[])
     //Load DSL from stream
     std::ifstream stream(argv[1]);
 
+    if (!stream.is_open()) 
+    {
+        std::cerr << "Failed to open file: " << argv[1] << "\n";
+        return 1;
+    }
+
     antlr4::ANTLRInputStream inputStream(stream);
     ImageLangLexer lexer(&inputStream);
     antlr4::CommonTokenStream tokens(&lexer);
+
+    for (auto token : tokens.getTokens())
+        std::cout << token->toString() << "\n";
+
     ImageLangParser parser(&tokens);
 
     //Parse Tree
@@ -195,7 +206,10 @@ int main(int argc, const char* argv[])
     }
 
     std::cout << "[JIT] Executing compiled IR...\n";
+    auto start = chrono::high_resolution_clock::now();
     int result = addr();
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
     std::cout << "[JIT] Execution finished with code " << result << "\n";
-    
+    std::cout << "[JIT] Execution time: " << duration << " ms\n";
 }
