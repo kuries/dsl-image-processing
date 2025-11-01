@@ -49,10 +49,9 @@ private:
         auto brightnessExpr = buildExpr(ctx->expr());
 
         auto brightnessStr = "brightness";
-        auto newValStr = "newVal";
 
-        auto brightnessAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(brightnessStr),
+        auto brightnessAssign = std::make_unique<VarDeclExprAST>(
+            brightnessStr,
             std::move(brightnessExpr)
         );
 
@@ -142,10 +141,9 @@ private:
         auto contrastExpr = buildExpr(ctx->expr());
 
         auto contrastStr = "contrast";
-        auto newValStr = "newVal";
 
-        auto contrastAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(contrastStr),
+        auto contrastAssign = std::make_unique<VarDeclExprAST>(
+            (contrastStr),
             std::move(contrastExpr)
         );
 
@@ -493,14 +491,14 @@ private:
         auto nyVar = "ny";
 
         // kernelWidth = <expr>
-        auto kernelWidthAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(kernelWidthVar),
+        auto kernelWidthAssign = std::make_unique<VarDeclExprAST>(
+            (kernelWidthVar),
             std::move(kernelWidthExpr)
         );
 
         // radius = kernelWidth / 2 + 1
-        auto radiusAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(radiusVar),
+        auto radiusAssign = std::make_unique<VarDeclExprAST>(
+            (radiusVar),
             std::make_unique<BinaryExprAST>(
                 "/",
                 std::make_unique<VariableExprAST>(kernelWidthVar),
@@ -519,8 +517,8 @@ private:
         );
 
         // radius = kernelWidth / 2
-        auto negRadiusAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(negRadiusVar),
+        auto negRadiusAssign = std::make_unique<VarDeclExprAST>(
+            (negRadiusVar),
             std::make_unique<BinaryExprAST>(
                 "*",
                 std::make_unique<VariableExprAST>(radiusVar),
@@ -543,8 +541,8 @@ private:
         std::vector<std::unique_ptr<ExprAST>> dxBody;
 
         // nx = j + dx
-        auto nxAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(nxVar),
+        auto nxAssign = std::make_unique<VarDeclExprAST>(
+            (nxVar),
             std::make_unique<BinaryExprAST>(
                 "+",
                 std::make_unique<VariableExprAST>(jVar),
@@ -553,8 +551,8 @@ private:
         );
 
         // ny = i + dy
-        auto nyAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(nyVar),
+        auto nyAssign = std::make_unique<VarDeclExprAST>(
+            (nyVar),
             std::make_unique<BinaryExprAST>(
                 "+",
                 std::make_unique<VariableExprAST>(iVar),
@@ -739,20 +737,20 @@ private:
 
         // inner body (for each pixel)
         std::vector<std::unique_ptr<ExprAST>> innerBody;
-        innerBody.push_back(std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(sumVar_r),
+        innerBody.push_back(std::make_unique<VarDeclExprAST>(
+            (sumVar_r),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(sumVar_g),
+        innerBody.push_back(std::make_unique<VarDeclExprAST>(
+            (sumVar_g),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(sumVar_b),
+        innerBody.push_back(std::make_unique<VarDeclExprAST>(
+            (sumVar_b),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(countVar),
+        innerBody.push_back(std::make_unique<VarDeclExprAST>(
+            (countVar),
             std::make_unique<NumberExprAST>(0)
         ));
         innerBody.push_back(std::move(dyLoop));
@@ -803,15 +801,14 @@ private:
 
         auto thresholdStr = "threshold";
         auto maxValueStr = "maxValue";
-        auto greyscaleVarStr = "greyscale";
 
-        auto thresholdAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(thresholdStr),
+        auto thresholdAssign = std::make_unique<VarDeclExprAST>(
+            (thresholdStr),
             std::move(thresholdExpr)
         );
 
-        auto maxValueAssign = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(maxValueStr),
+        auto maxValueAssign = std::make_unique<VarDeclExprAST>(
+            (maxValueStr),
             std::move(maxValueExpr)
         );
 
