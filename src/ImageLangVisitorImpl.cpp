@@ -115,10 +115,40 @@ llvm::Value* AssignExprAST::codegen() {
 	{
 		cout<<"Variable\n";
 		lhsName = LHSEVar->getName();
-		llvm::Value* lhsAlloc = NamedValues[lhsName];
 		llvm::Value *rhs = RHS->codegen();
+		
+		//For Image copy
+		// if(auto *RHSEVar = dynamic_cast<VariableExprAST *>(RHS.get()))
+		// {
+		// 	std::string rhsName = RHSEVar->getName();
+		// 	if(NamedValues[rhsName] && NamedValues[rhsName+".width"] && NamedValues[rhsName+".data"])
+		// 	{
+		// 		auto wA = NamedValues[rhsName+".width"];
+		// 		auto hA = NamedValues[rhsName+".height"];
+		// 		auto dA = NamedValues[rhsName+".data"];
+				
+		// 		llvm::Value* w = Builder.CreateLoad(wA->getAllocatedType(), wA, rhsName+".width");
+		// 		llvm::Value* h = Builder.CreateLoad(hA->getAllocatedType(), hA, rhsName+".height");
+		// 		llvm::Value* d = Builder.CreateLoad(dA->getAllocatedType(), dA, rhsName+".data");
+		// 		NamedValues[lhsName+".width"] = wA;
+		// 		NamedValues[lhsName+".height"] = hA;
 
-		Helper::printDouble(rhs);
+		// 		llvm::Function *copyImageData =
+		// 		getRuntimeFunction("get_image_copy", llvm::PointerType::get(TheContext, 0),
+		// 						{ llvm::PointerType::get(TheContext, 0), Builder.getDoubleTy(), Builder.getDoubleTy() });
+				
+		// 		llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
+		// 		llvm::AllocaInst *lhsAlloc = Helper::CreateEntryBlockAlloca(TheFunction, lhsName+".data", llvm::PointerType::get(TheContext, 0));
+		// 		llvm::Value *data = Builder.CreateCall(copyImageData, { d, w, h }, "imgdata");
+
+		// 		NamedValues[lhsName+".data"] = lhsAlloc;
+		// 		return Builder.CreateStore(data, lhsAlloc);
+		// 	}
+		// }
+
+		llvm::Value* lhsAlloc = NamedValues[lhsName];
+
+		// Helper::printDouble(rhs);
 
 		return Builder.CreateStore(rhs, lhsAlloc);
 	}
@@ -133,10 +163,9 @@ llvm::Value* AssignExprAST::codegen() {
 		llvm::Value *j = LHSEArr->Index2->codegen();
 		llvm::Value *k = LHSEArr->Index3->codegen();
 		llvm::Value *rhs = RHS->codegen();
-		cout<<"Good so far?\n";
 		llvm::Value* index1D = Helper::ComputeIndex(lhsName, i, j, k);
 		
-		Helper::printDouble(rhs);
+		// Helper::printDouble(rhs);
 		return Helper::GEPStore(imageData, index1D, rhs);
 	}
 	else

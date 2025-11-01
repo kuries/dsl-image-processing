@@ -33,14 +33,22 @@ void printParseTree(antlr4::tree::ParseTree *tree, const std::string &indent = "
     }
 }
 
-inline void printModuleIR(const llvm::Module &M, const std::string &title = "") {
+inline void printModuleIR(const llvm::Module &M, const std::string &title = "", std::string filePath="") {
     std::cout << "\n--------------------------------------------------------------------\n";
     if (!title.empty())
         std::cout << "Printing the LLVM IR " << title << ":\n";
     else
         std::cout << "Printing the LLVM IR:\n";
+    
+    std::error_code EC;
     std::cout << "--------------------------------------------------------------------\n";
-    M.print(llvm::errs(), nullptr);
+    if(filePath.empty())
+        M.print(llvm::errs(), nullptr);
+    else{
+        llvm::raw_fd_ostream OS(filePath, EC, llvm::sys::fs::OF_None);
+        M.print(OS, nullptr);
+    }
+        
     std::cout << "\n--------------------------------------------------------------------\n";
 }
 
@@ -183,14 +191,14 @@ int main(int argc, const char* argv[])
     // After Mem2Reg
     if (enableMem2RegOpt) {
         runFunctionPassOnModule(*TheModule, MyMem2RegPass(), "Mem2Reg");
-        printModuleIR(*TheModule, "After Mem2Reg");
+        // printModuleIR(*TheModule, "After Mem2Reg");
         verifyModuleIR(*TheModule, "After Mem2Reg");
     }
 
     // After CSE
     if (enableCSE) {
         runFunctionPassOnModule(*TheModule, GlobalCSEPass(), "CSE");
-        printModuleIR(*TheModule, "After GlobalCSE");
+        // printModuleIR(*TheModule, "After GlobalCSE");
         verifyModuleIR(*TheModule, "After GlobalCSE");
     }
 

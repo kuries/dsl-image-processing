@@ -278,18 +278,15 @@ private:
         auto contrastExpr = buildExpr(ctx->expr());
 
         auto contrastStr = "contrast";
-
         auto contrastAssign = std::make_unique<VarDeclExprAST>(
             (contrastStr),
             std::move(contrastExpr)
         );
-
         body.push_back(std::move(contrastAssign));
 
         auto iVar = "i";
         auto jVar = "j";
         auto kVar = "k"; //for RGB
-        
         auto overwritePixel = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
                 imageName,
@@ -317,7 +314,6 @@ private:
             )
         );
 
-
         std::vector<std::unique_ptr<ExprAST>> RGB_Body;
 
         RGB_Body.push_back(std::move(overwritePixel));
@@ -330,7 +326,6 @@ private:
             std::make_unique<NumberExprAST>(1),
             std::move(RGB_Body)
         );
-
 
         std::vector<std::unique_ptr<ExprAST>> innerBody;
 
@@ -363,7 +358,6 @@ private:
 
         for (auto &stmt : body)
             stmtList.push_back(std::move(stmt));
-
         //need to do normalization
         std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 

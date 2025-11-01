@@ -1,0 +1,4 @@
+image input = load("/root/data/samples/images/img-r.jpeg");
+//apply_threshold(input, 128, 255);
+adjust_brightness(input , 100);
+input.save("/root/data/samples/images/img2.jpg");

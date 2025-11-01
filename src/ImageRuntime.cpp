@@ -92,6 +92,22 @@ extern "C" double* get_image_data(Image* img) {
     return image;
 }
 
+extern "C" double* get_image_copy(double* img, double width, double height) {
+    if (!img) {
+        std::cerr << "[ImageRuntime] get_image_copy: null or empty image\n";
+        return nullptr;
+    }
+
+    // Allocate flat double array on heap
+    double* new_image = new double[(int)width * (int)height * 3];
+    for (int i = 0; i < width * height * 3; ++i) {
+        new_image[i] = static_cast<double>(img[i]);
+    }
+
+    std::cout << "[ImageRuntime] Succesfully done image copy " << std::endl;
+    return new_image;
+}
+
 extern "C" void printDouble(double n) {
     std::cout<<"Integer: "<<n<<'\n';
 }
