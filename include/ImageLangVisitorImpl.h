@@ -212,7 +212,7 @@ private:
         auto innerLoop = std::make_unique<ForExprAST>(
             jVar,
             std::make_unique<NumberExprAST>(0),
-            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
             std::make_unique<NumberExprAST>(1),
             std::move(innerBody)
         );
@@ -346,7 +346,7 @@ private:
         auto innerLoop1 = std::make_unique<ForExprAST>(
             jVar,
             std::make_unique<NumberExprAST>(0),
-            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
             std::make_unique<NumberExprAST>(1),
             std::move(innerBody1)
         );
@@ -440,7 +440,7 @@ private:
         auto innerLoop2 = std::make_unique<ForExprAST>(
             jVar,
             std::make_unique<NumberExprAST>(0),
-            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
             std::make_unique<NumberExprAST>(1),
             std::move(innerBody2)
         );
@@ -508,19 +508,13 @@ private:
         auto radiusAssign = std::make_unique<VarDeclExprAST>(
             (radiusVar),
             std::make_unique<BinaryExprAST>(
-                "/",
-                std::make_unique<VariableExprAST>(kernelWidthVar),
-                std::make_unique<NumberExprAST>(2)
-            )
-        );
-
-        //for for loop checking 
-        auto radiusAssignIncr = std::make_unique<AssignExprAST>(
-            std::make_unique<VariableExprAST>(radiusVar),
-            std::make_unique<BinaryExprAST>(
-                "/",
-                std::make_unique<VariableExprAST>(radiusVar),
-                std::make_unique<NumberExprAST>(2)
+                "+",
+                std::make_unique<NumberExprAST>(1),
+                std::make_unique<BinaryExprAST>(
+                    "/",
+                    std::make_unique<VariableExprAST>(kernelWidthVar),
+                    std::make_unique<NumberExprAST>(2)
+                )
             )
         );
 
@@ -529,14 +523,17 @@ private:
             (negRadiusVar),
             std::make_unique<BinaryExprAST>(
                 "*",
-                std::make_unique<VariableExprAST>(radiusVar),
-                std::make_unique<NumberExprAST>(-1)
+                std::make_unique<NumberExprAST>(-1),
+                std::make_unique<BinaryExprAST>(
+                    "/",
+                    std::make_unique<VariableExprAST>(kernelWidthVar),
+                    std::make_unique<NumberExprAST>(2)
+                )
             )
         );
 
         body.push_back(std::move(kernelWidthAssign));
         body.push_back(std::move(radiusAssign));
-        body.push_back(std::move(radiusAssignIncr));
         body.push_back(std::move(negRadiusAssign));
         
 
@@ -642,7 +639,7 @@ private:
                 std::make_unique<ArrayAccessExprAST>(
                     imageName,
                     std::make_unique<VariableExprAST>(nyVar),
-                    std::make_unique<VariableExprAST>(nyVar),
+                    std::make_unique<VariableExprAST>(nxVar),
                     std::make_unique<NumberExprAST>(2)
                 )
             )
@@ -962,7 +959,7 @@ private:
         auto innerLoop = std::make_unique<ForExprAST>(
             jVar,
             std::make_unique<NumberExprAST>(0),
-            std::make_unique<VariableExprAST>(imageName + ".mask_width"),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
             std::make_unique<NumberExprAST>(1),
             std::move(innerBody)
         );
