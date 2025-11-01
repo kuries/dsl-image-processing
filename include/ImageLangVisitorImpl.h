@@ -75,18 +75,6 @@ private:
 
         auto iVar = "i";
         auto jVar = "j";
-
-        auto iAssign = std::make_unique<VarDeclExprAST>(
-            iVar,
-            std::make_unique<NumberExprAST>(0)
-        );
-
-        auto jAssign = std::make_unique<VarDeclExprAST>(
-            jVar,
-            std::make_unique<NumberExprAST>(0)
-        );
-
-        
         
         auto newVal = std::make_unique<AssignExprAST>(
             std::make_unique<VariableExprAST>(newValStr),
@@ -148,43 +136,35 @@ private:
 
         std::vector<std::unique_ptr<ExprAST>> innerBody;
 
-        // innerBody.push_back(std::move(newVal));
-        // innerBody.push_back(std::move(lessThanMinIfConfition));
-        // innerBody.push_back(std::move(greaterThanMinIfConfition));
-        // innerBody.push_back(std::move(overwritePixel));
+        innerBody.push_back(std::move(newVal));
+        innerBody.push_back(std::move(lessThanMinIfConfition));
+        innerBody.push_back(std::move(greaterThanMinIfConfition));
+        innerBody.push_back(std::move(overwritePixel));
 
-        // // Inner loop (j)
-        // auto innerLoop = std::make_unique<ForExprAST>(
-        //     jVar,
-        //     std::make_unique<NumberExprAST>(0),
-        //     std::make_unique<VariableExprAST>(imageName + ".mask_width"),
-        //     std::make_unique<NumberExprAST>(1),
-        //     std::move(innerBody)
-        // );
+        // Inner loop (j)
+        auto innerLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
 
-        // std::vector<std::unique_ptr<ExprAST>> outerBody;
-        // outerBody.push_back(std::move(innerLoop));
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(innerLoop));
 
-        // // Outer loop (i)
-        // auto outerLoop = std::make_unique<ForExprAST>(
-        //     iVar,
-        //     std::make_unique<NumberExprAST>(0),
-        //     std::make_unique<VariableExprAST>(imageName + ".height"),
-        //     std::make_unique<NumberExprAST>(1),
-        //     std::move(outerBody)
-        // );
+        // Outer loop (i)
+        auto outerLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
 
-        // body.push_back(std::move(outerLoop));
-
-        body.push_back(std::move(iAssign));
-        body.push_back(std::move(jAssign));
-        body.push_back(std::move(newVal));
-        body.push_back(std::move(lessThanMinIfConfition));
-        body.push_back(std::move(greaterThanMinIfConfition));
-        body.push_back(std::move(overwritePixel));
+        body.push_back(std::move(outerLoop));
 
         std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
-
 
         for (auto &stmt : body)
             stmtList.push_back(std::move(stmt));
