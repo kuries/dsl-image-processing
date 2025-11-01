@@ -101,14 +101,33 @@ add_custom_target(GenerateGrammar
 # Source files (include generated sources dynamically at build time)
 # -----------------------------
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
+
 add_executable(image-dsl ${SRC_FILES})
 
-# Make executable depend on ANTLR generation
+# Ensure grammar is generated before build
 add_dependencies(image-dsl GenerateGrammar)
+
+# Include generated sources dynamically after they're built
+add_custom_command(
+    TARGET image-dsl PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "🔧 Including generated ANTLR sources..."
+    COMMAND ${CMAKE_COMMAND} -E sleep 0.1
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GENERATED_DIR}/dummy.cpp
+)
+
+# # Add the generated sources directory to the build system
+# target_sources(image-dsl PRIVATE
+#     ${GENERATED_DIR}/ImageLangLexer.cpp
+#     ${GENERATED_DIR}/ImageLangParser.cpp
+#     ${GENERATED_DIR}/ImageLangBaseVisitor.cpp
+#     ${GENERATED_DIR}/ImageLangVisitor.cpp
+# )
 
 # Tell compiler where to find includes
 target_include_directories(image-dsl PRIVATE
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/Passes
     ${GENERATED_DIR}
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
     ${LLVM_INCLUDE_DIRS}
