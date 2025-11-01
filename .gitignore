@@ -2,9 +2,15 @@
 /build/
 /build/**
 
+/.vscode/
+/.vscose/** */
+
 # Ignore generated files and folders
 /src/generated/
 /src/generated/**
+
+/dist/
+/dist/**
 
 # Common build artifacts (just in case)
 *.o
