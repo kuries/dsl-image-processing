@@ -16,6 +16,7 @@ statement
     | applyBoxBlur
     | applyAdjustBrightness
     | applyAdjustContrast
+    | convertToGreyscale
     | ';'
     ;
 
@@ -67,6 +68,11 @@ applyAdjustBrightness
  // ===== ContrastAdjust application =====
 applyAdjustContrast
     : 'adjust_contrast' '(' ID ',' expr  ')' ';'
+    ;
+
+ // ===== ConvertToGreyscale application =====
+convertToGreyscale
+    : 'convertToGreyscale' '(' ID ')' ';'
     ;
 
 // ===== Expressions (with precedence) =====

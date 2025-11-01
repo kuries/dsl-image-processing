@@ -46,7 +46,135 @@ private:
         if (ctx->applyBoxBlur())            return buildApplyBoxBlur(ctx->applyBoxBlur());
         if (ctx->applyAdjustBrightness())   return buildApplyBrightnessAdjust(ctx->applyAdjustBrightness());
         if (ctx->applyAdjustContrast())     return buildApplyContrastAdjust(ctx->applyAdjustContrast());
+        if (ctx->convertToGreyscale())      return buildConvertToGreyscale(ctx->convertToGreyscale());
         return std::vector<std::unique_ptr<ExprAST>>{};
+    }
+
+    std::vector<std::unique_ptr<ExprAST>> buildConvertToGreyscale(ImageLangParser::ConvertToGreyscaleContext *ctx)
+    {
+        std::vector<std::unique_ptr<ExprAST>> body;
+
+        std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
+
+        std::string imageName = ctx->ID()->getText();
+        auto iVar = "i";
+        auto jVar = "j";
+        auto greyscaleVar = "grey";
+
+        auto greyscaleAssign = std::make_unique<VarDeclExprAST>(
+            greyscaleVar,
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        body.push_back(std::move(greyscaleAssign));
+
+        auto greyscale = std::make_unique<AssignExprAST>
+        (
+            std::make_unique<VariableExprAST>(greyscaleVar),
+            std::make_unique<BinaryExprAST>(
+                "+",
+                std::make_unique<BinaryExprAST>(
+                    "*",
+                    std::make_unique<NumberExprAST>(0.299), //Red
+                    std::make_unique<ArrayAccessExprAST>(
+                        imageName,
+                        std::make_unique<VariableExprAST>(iVar),
+                        std::make_unique<VariableExprAST>(jVar),
+                        std::make_unique<NumberExprAST>(0)
+                    )
+                ),
+                std::make_unique<BinaryExprAST>(
+                    "+",
+                    std::make_unique<BinaryExprAST>(
+                        "*",
+                        std::make_unique<NumberExprAST>(0.587), //Green
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<NumberExprAST>(1)
+                        )
+                    ),
+                    std::make_unique<BinaryExprAST>(
+                        "*",
+                        std::make_unique<NumberExprAST>(0.114), //Blue
+                        std::make_unique<ArrayAccessExprAST>(
+                            imageName,
+                            std::make_unique<VariableExprAST>(iVar),
+                            std::make_unique<VariableExprAST>(jVar),
+                            std::make_unique<NumberExprAST>(2)
+                        )
+                    )
+                )
+            )     
+        );
+        
+        auto rewritePixel_r = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(0)
+            ),
+            std::make_unique<VariableExprAST>(greyscaleVar)
+        );
+
+        auto rewritePixel_g = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(1)
+            ),
+            std::make_unique<VariableExprAST>(greyscaleVar)
+        );
+
+        auto rewritePixel_b = std::make_unique<AssignExprAST>(
+            std::make_unique<ArrayAccessExprAST>(
+                imageName,
+                std::make_unique<VariableExprAST>(iVar),
+                std::make_unique<VariableExprAST>(jVar),
+                std::make_unique<NumberExprAST>(2)
+            ),
+            std::make_unique<VariableExprAST>(greyscaleVar)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> innerBody;
+        innerBody.push_back(std::move(greyscale));
+        innerBody.push_back(std::move(rewritePixel_r));
+        innerBody.push_back(std::move(rewritePixel_g));
+        innerBody.push_back(std::move(rewritePixel_b));
+
+        // Inner loop (j)
+        auto innerLoop = std::make_unique<ForExprAST>(
+            jVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".width"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(innerBody)
+        );
+
+        std::vector<std::unique_ptr<ExprAST>> outerBody;
+        outerBody.push_back(std::move(innerLoop));
+
+        // Outer loop (i)
+        auto outerLoop = std::make_unique<ForExprAST>(
+            iVar,
+            std::make_unique<NumberExprAST>(0),
+            std::make_unique<VariableExprAST>(imageName + ".height"),
+            std::make_unique<NumberExprAST>(1),
+            std::move(outerBody)
+        );
+
+        body.push_back(std::move(outerLoop));
+
+
+        for (auto &stmt : body)
+            stmtList.push_back(std::move(stmt));
+
+        // no need normalization    
+
+        return stmtList;
     }
 
     std::vector<std::unique_ptr<ExprAST>> buildApplyBrightnessAdjust(ImageLangParser::ApplyAdjustBrightnessContext *ctx)
@@ -242,6 +370,7 @@ private:
         // for (auto &stmt : ImgNormalizationVector)
         //     stmtList.push_back(std::move(stmt));
         
+        return stmtList;
     }
 
     std::vector<std::unique_ptr<ExprAST>> ImageNormalization(std::string imageName)
@@ -482,6 +611,7 @@ private:
         auto kernelWidthExpr = buildExpr(ctx->expr());
 
         // Variable names
+        std::string tempImage = imageName + "_temp";
         auto kernelWidthVar = "kernelWidth";
         auto radiusVar = "radius";
         auto negRadiusVar = "negRadius";
@@ -497,6 +627,12 @@ private:
         auto dyVar = "dy";
         auto nxVar = "nx";
         auto nyVar = "ny";
+
+        //temporary image assignment
+        auto tempImageAssignment = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(tempImage),
+            std::make_unique<VariableExprAST>(imageName)
+        );
 
         // kernelWidth = <expr>
         auto kernelWidthAssign = std::make_unique<VarDeclExprAST>(
@@ -532,10 +668,47 @@ private:
             )
         );
 
+        body.push_back(std::move(tempImageAssignment));
         body.push_back(std::move(kernelWidthAssign));
         body.push_back(std::move(radiusAssign));
         body.push_back(std::move(negRadiusAssign));
+
+        auto sum_r_Assign = std::make_unique<VarDeclExprAST>(
+            (sumVar_r),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        auto sum_g_Assign = std::make_unique<VarDeclExprAST>(
+            (sumVar_g),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        auto sum_b_Assign = std::make_unique<VarDeclExprAST>(
+            (sumVar_b),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        auto count_Assign = std::make_unique<VarDeclExprAST>(
+            (countVar),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        auto nx_Assign = std::make_unique<VarDeclExprAST>(
+            (nxVar),
+            std::make_unique<NumberExprAST>(0)
+        );
+
+        auto ny_Assign = std::make_unique<VarDeclExprAST>(
+            (nyVar),
+            std::make_unique<NumberExprAST>(0)
+        );
         
+        body.push_back(std::move(sum_r_Assign));
+        body.push_back(std::move(sum_g_Assign));
+        body.push_back(std::move(sum_b_Assign));
+        body.push_back(std::move(count_Assign));
+        body.push_back(std::move(nx_Assign));
+        body.push_back(std::move(ny_Assign));
 
         // Outer loops over image (i, j)
         // for (i = 0; i < image.height; i++)
@@ -546,8 +719,8 @@ private:
         std::vector<std::unique_ptr<ExprAST>> dxBody;
 
         // nx = j + dx
-        auto nxAssign = std::make_unique<VarDeclExprAST>(
-            (nxVar),
+        auto nxAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(nxVar),
             std::make_unique<BinaryExprAST>(
                 "+",
                 std::make_unique<VariableExprAST>(jVar),
@@ -556,8 +729,8 @@ private:
         );
 
         // ny = i + dy
-        auto nyAssign = std::make_unique<VarDeclExprAST>(
-            (nyVar),
+        auto nyAssign = std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(nyVar),
             std::make_unique<BinaryExprAST>(
                 "+",
                 std::make_unique<VariableExprAST>(iVar),
@@ -576,7 +749,7 @@ private:
             std::make_unique<BinaryExprAST>(
                 "<",
                 std::make_unique<VariableExprAST>(nxVar),
-                std::make_unique<VariableExprAST>(imageName + ".width")
+                std::make_unique<VariableExprAST>(tempImage + ".width")
             )
         );
 
@@ -590,7 +763,7 @@ private:
             std::make_unique<BinaryExprAST>(
                 "<",
                 std::make_unique<VariableExprAST>(nyVar),
-                std::make_unique<VariableExprAST>(imageName + ".height")
+                std::make_unique<VariableExprAST>(tempImage + ".height")
             )
         );
 
@@ -742,20 +915,20 @@ private:
 
         // inner body (for each pixel)
         std::vector<std::unique_ptr<ExprAST>> innerBody;
-        innerBody.push_back(std::make_unique<VarDeclExprAST>(
-            (sumVar_r),
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_r),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<VarDeclExprAST>(
-            (sumVar_g),
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_g),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<VarDeclExprAST>(
-            (sumVar_b),
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(sumVar_b),
             std::make_unique<NumberExprAST>(0)
         ));
-        innerBody.push_back(std::make_unique<VarDeclExprAST>(
-            (countVar),
+        innerBody.push_back(std::make_unique<AssignExprAST>(
+            std::make_unique<VariableExprAST>(countVar),
             std::make_unique<NumberExprAST>(0)
         ));
         innerBody.push_back(std::move(dyLoop));
