@@ -11,9 +11,9 @@
 
 namespace llvm {
 
-class CopyPropagationPass : public PassInfoMixin<CopyPropagationPass> {
-public:
-    PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
-};
+    class CopyPropagationPass : public PassInfoMixin<CopyPropagationPass> {
+    public:
+        PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+    };
 
 } 

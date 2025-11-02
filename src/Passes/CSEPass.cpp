@@ -33,7 +33,7 @@ PreservedAnalyses GlobalCSEPass::run(Function &F, FunctionAnalysisManager &AM) {
                     : PreservedAnalyses::all();
 }
 
-
+// ===== Pass Registration =====
 llvm::PassPluginLibraryInfo getGlobalCSEPluginInfo() {
     return {
         LLVM_PLUGIN_API_VERSION, "GlobalCSEPass", LLVM_VERSION_STRING,
@@ -51,6 +51,7 @@ llvm::PassPluginLibraryInfo getGlobalCSEPluginInfo() {
     };
 }
 
+// Export entry point for plugin
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
     return getGlobalCSEPluginInfo();

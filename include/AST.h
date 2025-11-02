@@ -15,7 +15,7 @@ public:
     virtual llvm::Value *codegen() = 0;
 };
 
-// /// Number literal, e.g. `5.0`
+// /// Number literal -> `5.0`
 class NumberExprAST : public ExprAST {
     double Val;
 
@@ -27,9 +27,10 @@ public:
     llvm::Value *codegen() override;
 };
 
+//Variable Declaration Node
 class VarDeclExprAST : public ExprAST {
     std::string Name;
-    std::unique_ptr<ExprAST> InitExpr; // e.g. NumberExprAST or BinaryExprAST
+    std::unique_ptr<ExprAST> InitExpr; // e.g. NumberExprAST or BinaryExprAST or VariableExprAST
 
 public:
     VarDeclExprAST(std::string Name, std::unique_ptr<ExprAST> InitExpr)
@@ -56,7 +57,7 @@ public:
     llvm::Value *codegen() override;
 };
 
-// /// Variable reference, e.g. `x`
+// /// Variable reference, e.g. `x = 10; or x = i1;`
 class VariableExprAST : public ExprAST {
     std::string Name;
 
@@ -106,7 +107,7 @@ public:
     llvm::Value *codegen() override;
 };
 
-// Array access, e.g. img[i][j]
+// Array access, e.g. img[i][j][0]
 class ArrayAccessExprAST : public ExprAST {
     std::string ArrayName;
     
@@ -134,7 +135,7 @@ public:
     llvm::Value *codegen() override;
 };
 
-
+//Assignment operation node
 class AssignExprAST : public ExprAST {
     std::unique_ptr<ExprAST> LHS;
     std::unique_ptr<ExprAST> RHS; // e.g. BinaryExprAST, NumberExprAST, VariableExprAST
@@ -246,7 +247,7 @@ public:
                 for (const auto &stmt : Body) 
                 {
                     if (stmt) stmt->print(indent + 4);
-                    std::cout << "\n"; // ensure spacing between nested prints
+                    std::cout << "\n";
                 }
             }
         }
@@ -259,10 +260,10 @@ public:
     llvm::Value *codegen() override;
 };
 
-/// Represents an 'image' object declaration.
+/// Image object declaration.
 class ImageDeclExprAST : public ExprAST {
     std::string Name;
-    std::unique_ptr<ExprAST> InitExpr; // typically a LoadExprAST
+    std::unique_ptr<ExprAST> InitExpr; // LoadExprAST
 
 public:
     ImageDeclExprAST(std::string Name, std::unique_ptr<ExprAST> InitExpr)
@@ -278,7 +279,7 @@ public:
 };
 
 
-/// Represents load("path")
+///  Load("path")
 class LoadExprAST : public ExprAST {
     std::string Path;
 
@@ -294,7 +295,7 @@ public:
     llvm::Value *codegen();
 };
 
-/// Represents store(path)
+/// Store("path")
 class StoreExprAST : public ExprAST {
     std::string ImageName;
     std::string Path;
@@ -310,6 +311,7 @@ public:
     llvm::Value *codegen();
 };
 
+//Node for Entire Program
 struct ProgramAST : ExprAST {
     std::vector<std::unique_ptr<ExprAST>> Statements;
 

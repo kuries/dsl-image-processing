@@ -1,3 +1,4 @@
+#pragma once
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Instructions.h"

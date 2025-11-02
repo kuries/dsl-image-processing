@@ -8,4 +8,4 @@ struct ConstantFoldingPass : public PassInfoMixin<ConstantFoldingPass> {
     PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
 };
 
-} // namespace llvm
+}

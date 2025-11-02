@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-// Global LLVM objects (defined in one .cpp file)
+// Global LLVM objects
 extern llvm::LLVMContext TheContext;
 extern std::unique_ptr<llvm::Module> TheModule;
 extern llvm::IRBuilder<> Builder;

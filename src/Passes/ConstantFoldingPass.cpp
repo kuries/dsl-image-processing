@@ -118,6 +118,7 @@ llvm::PassPluginLibraryInfo getConstantFoldingPluginInfo() {
     };
 }
 
+// Export entry point for plugin
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
     return getConstantFoldingPluginInfo();

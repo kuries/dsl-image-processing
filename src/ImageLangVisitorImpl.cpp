@@ -8,9 +8,11 @@
 
 using namespace std;
 
+bool debug = false;
+
 
 llvm::Value *LoadExprAST::codegen() {
-	cout<<"entered load";
+	if(debug) cout<<"entered load";
     auto *ImagePtrTy = llvm::PointerType::getUnqual(getImageStructType());
 
     // Declare or retrieve extern "C" function: Image* load_image(const char*)
@@ -113,7 +115,7 @@ llvm::Value* AssignExprAST::codegen() {
 
 	if (VariableExprAST *LHSEVar = dynamic_cast<VariableExprAST *>(LHS.get()))
 	{
-		cout<<"Variable\n";
+		if(debug) cout<<"Variable\n";
 		lhsName = LHSEVar->getName();
 		llvm::Value *rhs = RHS->codegen();
 		
@@ -154,7 +156,7 @@ llvm::Value* AssignExprAST::codegen() {
 	}
 	else if (ArrayAccessExprAST *LHSEArr = dynamic_cast<ArrayAccessExprAST *>(LHS.get())) 
 	{
-		cout<<"Array\n";
+		if(debug) cout<<"Array\n";
 		lhsName = LHSEArr->getName();
 		llvm::AllocaInst *imgDataA = NamedValues[lhsName+".data"];
 		llvm::Value *imageData = Builder.CreateLoad(imgDataA->getAllocatedType(), imgDataA, lhsName+".data");

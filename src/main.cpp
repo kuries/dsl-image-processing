@@ -76,6 +76,7 @@ template <typename PassType>
 void runFunctionPassOnModule(llvm::Module &M, PassType &&Pass, const std::string &PassName) {
     using namespace llvm;
 
+    std::cout<<"Running "<<PassName<<" pass\n";
     // Create the analysis managers and register analyses
     PassBuilder PB;
     LoopAnalysisManager LAM;
@@ -110,9 +111,9 @@ int main(int argc, const char* argv[])
     bool enableConstantFolding = true;
     bool enableCopyPropagation = true;
 
-    std::cerr << "Input file path: " << argv[1] << std::endl;
+    bool printLogs = false;
 
-    if (argc >= 3) { // we expect: ./image-dsl <file> -opt=true/false
+    if (argc >= 3) { // we expect: ./image-dsl <file> -argname=true/false
         for(int i = 2; i < argc; i++)
         {
             std::string optArg = argv[i];
@@ -132,6 +133,11 @@ int main(int argc, const char* argv[])
                 enableCopyPropagation = false;
             else if (optArg == "-copyprop=true")
                 enableCopyPropagation = true;
+            else if (optArg == "-logs=false")
+                printLogs = false;
+            else if (optArg == "-logs=true")
+                printLogs = true;
+
         }
     }
 
@@ -140,7 +146,7 @@ int main(int argc, const char* argv[])
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently("libruntime.so");
+    llvm::sys::DynamicLibrary::LoadLibraryPermanently(NULL);
     auto JITOrErr = llvm::orc::LLJITBuilder().create();
     if (!JITOrErr) {
         llvm::errs() << "Failed to create JIT\n";
@@ -155,7 +161,6 @@ int main(int argc, const char* argv[])
     {
         std::cerr << "Failed to load current process symbols!\n";
     }
-   
 
     //Load DSL from stream
     std::ifstream stream(argv[1]);
@@ -170,62 +175,65 @@ int main(int argc, const char* argv[])
     ImageLangLexer lexer(&inputStream);
     antlr4::CommonTokenStream tokens(&lexer);
 
-    for (auto token : tokens.getTokens())
-        std::cout << token->toString() << "\n";
+    if(printLogs)
+    {
+        for (auto token : tokens.getTokens())
+            std::cout << token->toString() << "\n";
+    }
+    
 
     ImageLangParser parser(&tokens);
 
     //Parse Tree
     auto tree = parser.program();
 
-    //printParseTree(tree);
+    if(printLogs) printParseTree(tree);
 
     //AST
     ASTBuilder builder;
     auto programAST = builder.build(tree);
 
-    std::cout<<"Printing the Parse Tree : \n";
-
-    programAST->print();
-
-    
-    std::cout<<"Get Struct Type : \n";
+    if(printLogs)
+    {
+        std::cout<<"Printing the Parse Tree : \n";
+        programAST->print();
+    }
 
     getImageStructType();
 
-    std::cout<<"Codegen : \n";
-
     programAST->codegen();
 
-
-    printModuleIR(*TheModule, "Before Optimization");
-    verifyModuleIR(*TheModule, "Before Optimization");
+    if(printLogs)
+    {
+        printModuleIR(*TheModule, "Before Optimization");
+        verifyModuleIR(*TheModule, "Before Optimization");
+    }
 
     // After Mem2Reg
     if (enableMem2RegOpt) {
         runFunctionPassOnModule(*TheModule, MyMem2RegPass(), "Mem2Reg");
-        //printModuleIR(*TheModule, "After Mem2Reg");
+        if(printLogs) printModuleIR(*TheModule, "After Mem2Reg");
         verifyModuleIR(*TheModule, "After Mem2Reg");
     }
 
     //After Constant Folding
     if (enableConstantFolding) {
         runFunctionPassOnModule(*TheModule, ConstantFoldingPass(), "Constant Folding");
-        //printModuleIR(*TheModule, "Before Constant Folding");
+        if(printLogs) printModuleIR(*TheModule, "Before Constant Folding");
         verifyModuleIR(*TheModule, "After Constant Folding");
     }
 
     // After CSE
     if (enableCSE) {
         runFunctionPassOnModule(*TheModule, GlobalCSEPass(), "Common SubExpression Elimination");
-        //printModuleIR(*TheModule, "Before Common SubExpression Elimination");
+        if(printLogs) printModuleIR(*TheModule, "Before Common SubExpression Elimination");
         verifyModuleIR(*TheModule, "After Common SubExpression Elimination");
     }
 
     // After Copy Propagation
     if (enableCopyPropagation) {
         runFunctionPassOnModule(*TheModule, CopyPropagationPass(), "Common Copy Propagation");
-        //printModuleIR(*TheModule, "Before Copy Propagation");
+        if(printLogs) printModuleIR(*TheModule, "Before Copy Propagation");
         verifyModuleIR(*TheModule, "After Copy Propagation");
     }
 

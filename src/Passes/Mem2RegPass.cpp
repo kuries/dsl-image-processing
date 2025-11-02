@@ -22,7 +22,7 @@ PreservedAnalyses MyMem2RegPass::run(Function &F, FunctionAnalysisManager &AM) {
     return PreservedAnalyses::none();
 }
 
-// Optional plugin registration (if you plan to use as plugin .so)
+// ===== Pass Registration =====
 llvm::PassPluginLibraryInfo getMyMem2RegPassPluginInfo() {
     return {
         LLVM_PLUGIN_API_VERSION, "MyMem2RegPass", LLVM_VERSION_STRING,
@@ -40,6 +40,7 @@ llvm::PassPluginLibraryInfo getMyMem2RegPassPluginInfo() {
     };
 }
 
+// Export entry point for plugin
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo_MyMem2Reg() {
     return getMyMem2RegPassPluginInfo();

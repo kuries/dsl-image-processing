@@ -196,7 +196,7 @@ private:
 
         auto iVar = "i";
         auto jVar = "j";
-        auto kVar = "k"; //for RGB
+        auto kVar = "k";
         
         auto overwritePixel = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
@@ -286,7 +286,7 @@ private:
 
         auto iVar = "i";
         auto jVar = "j";
-        auto kVar = "k"; //for RGB
+        auto kVar = "k";
         auto overwritePixel = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
                 imageName,
@@ -358,7 +358,7 @@ private:
 
         for (auto &stmt : body)
             stmtList.push_back(std::move(stmt));
-        //need to do normalization
+
         std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
 
         for (auto &stmt : ImgNormalizationVector)
@@ -379,7 +379,7 @@ private:
         
         std::vector<std::unique_ptr<ExprAST>> RGB_Body;
 
-        //happens for every channel
+        //calculated for every channel
 
         auto minAssign = std::make_unique<VarDeclExprAST>(
             (minVar),
@@ -613,10 +613,8 @@ private:
         auto sumVar_g = "sum_g";
         auto sumVar_b = "sum_b";
         auto countVar = "count";
-        //image nested for loop
         auto iVar = "i";
         auto jVar = "j";
-        //kernel nested for loop
         auto dxVar = "dx";
         auto dyVar = "dy";
         auto nxVar = "nx";
@@ -634,7 +632,7 @@ private:
             std::move(kernelWidthExpr)
         );
 
-        // radius = kernelWidth / 2 + 1
+        // radius = kernelWidth / 2 + 1 (incrementing one for 'FOR conditinal check')
         auto radiusAssign = std::make_unique<VarDeclExprAST>(
             (radiusVar),
             std::make_unique<BinaryExprAST>(
@@ -1032,16 +1030,6 @@ private:
             std::make_unique<VariableExprAST>(thresholdStr)
         );
 
-        // auto condition = std::make_unique<BinaryExprAST>(
-        //     ">", 
-        //     std::make_unique<ArrayAccessExprAST>(
-        //         imageName,
-        //         std::make_unique<VariableExprAST>(iVar),
-        //         std::make_unique<VariableExprAST>(jVar)
-        //     ),
-        //     std::make_unique<VariableExprAST>(thresholdStr)
-        // );
-
         std::vector<std::unique_ptr<ExprAST>> thenBody;
         thenBody.push_back(
             std::make_unique<AssignExprAST>(
@@ -1151,12 +1139,6 @@ private:
 
         for (auto &stmt : body)
             stmtList.push_back(std::move(stmt));
-
-        //need to do normalization
-        // std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector = ImageNormalization(imageName);
-
-        // for (auto &stmt : ImgNormalizationVector)
-        //     stmtList.push_back(std::move(stmt));
 
         return stmtList;
     }
