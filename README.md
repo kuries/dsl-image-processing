@@ -1,24 +1,26 @@
 #To Build the project :#
 
-apt update
-apt install -y build-essential cmake git openjdk-17-jdk
-apt install libopencv-dev
-curl -L -o /workspace/ImageDSL/build/antlr-4.13.0-complete.jar https://www.antlr.org/download/antlr-4.13.0-complete.jar
+```apt update```
+```apt install -y build-essential cmake git openjdk-17-jdk```
+```apt install libopencv-dev```
+```curl -L -o /workspace/ImageDSL/build/antlr-4.13.0-complete.jar https://www.antlr.org/download/antlr-4.13.0-complete.jar```
 
-cd ImageDSL
-mkdir build && cd build
-cmake ..
-cmake --build .  
-                    (or cmake --build . --parallel to make it faster)
-
-
+```cd ImageDSL```
+```mkdir build && cd build```
+```cmake ..```
+```cmake --build . ``` 
 
 #To Run the project :#
 
-cd build
-./image-dsl ../test/sample.imgdsl 
-./image-dsl ../test/sample.imgdsl -mem2reg=true -cse=true
-./image-dsl ../test/sample.imgdsl -cse=false
+```./image-dsl ../test/sample.imgdsl ```
+
+#For running without optimizations :
+```./image-dsl ../test/sample.imgdsl -mem2reg=false -cse=false -cf=false -copyprop=false```
+
+#For benchmarking :
+```./image-dsl ../test/sample.imgdsl -benchmark=true```
+```./image-dsl ../test/sample.imgdsl -benchmark=true -mem2reg=false -cse=false -cf=false -copyprop=false```
+
 
 #To Run the Functional Tests
 1. ```g++ main.cpp -o test_harness `pkg-config --cflags --libs opencv4```
