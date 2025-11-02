@@ -128,6 +128,7 @@ add_custom_command(
 target_include_directories(image-dsl PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/Passes
+    ${PROJECT_SOURCE_DIR}/include/Benchmarking
     ${GENERATED_DIR}
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
     ${LLVM_INCLUDE_DIRS}
