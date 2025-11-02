@@ -57,9 +57,9 @@ private:
         std::vector<std::unique_ptr<ExprAST>> stmtList = std::vector<std::unique_ptr<ExprAST>>{};
 
         std::string imageName = ctx->ID()->getText();
-        auto iVar = "i";
-        auto jVar = "j";
-        auto greyscaleVar = "grey";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
+        auto greyscaleVar = "__grey__";
 
         auto greyscaleAssign = std::make_unique<VarDeclExprAST>(
             greyscaleVar,
@@ -185,7 +185,7 @@ private:
 
         auto brightnessExpr = buildExpr(ctx->expr());
 
-        auto brightnessStr = "brightness";
+        auto brightnessStr = "__brightness__";
 
         auto brightnessAssign = std::make_unique<VarDeclExprAST>(
             brightnessStr,
@@ -194,9 +194,9 @@ private:
 
         body.push_back(std::move(brightnessAssign));
 
-        auto iVar = "i";
-        auto jVar = "j";
-        auto kVar = "k";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
+        auto kVar = "__k__";
         
         auto overwritePixel = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
@@ -277,16 +277,16 @@ private:
 
         auto contrastExpr = buildExpr(ctx->expr());
 
-        auto contrastStr = "contrast";
+        auto contrastStr = "__contrast__";
         auto contrastAssign = std::make_unique<VarDeclExprAST>(
             (contrastStr),
             std::move(contrastExpr)
         );
         body.push_back(std::move(contrastAssign));
 
-        auto iVar = "i";
-        auto jVar = "j";
-        auto kVar = "k";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
+        auto kVar = "__k__";
         auto overwritePixel = std::make_unique<AssignExprAST>(
             std::make_unique<ArrayAccessExprAST>(
                 imageName,
@@ -371,11 +371,11 @@ private:
     {
         std::vector<std::unique_ptr<ExprAST>> ImgNormalizationVector;
 
-        auto minVar = "min";
-        auto maxVar = "max";
-        auto iVar = "i";
-        auto jVar = "j";
-        auto kVar = "k";
+        auto minVar = "__min__";
+        auto maxVar = "__max__";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
+        auto kVar = "__k__";
         
         std::vector<std::unique_ptr<ExprAST>> RGB_Body;
 
@@ -605,20 +605,20 @@ private:
         auto kernelWidthExpr = buildExpr(ctx->expr());
 
         // Variable names
-        std::string tempImage = imageName + "_temp";
-        auto kernelWidthVar = "kernelWidth";
-        auto radiusVar = "radius";
-        auto negRadiusVar = "negRadius";
-        auto sumVar_r = "sum_r";
-        auto sumVar_g = "sum_g";
-        auto sumVar_b = "sum_b";
-        auto countVar = "count";
-        auto iVar = "i";
-        auto jVar = "j";
-        auto dxVar = "dx";
-        auto dyVar = "dy";
-        auto nxVar = "nx";
-        auto nyVar = "ny";
+        std::string tempImage = "__" + imageName + "_temp__";
+        auto kernelWidthVar = "__kernelWidth__";
+        auto radiusVar = "__radius__";
+        auto negRadiusVar = "__negRadius__";
+        auto sumVar_r = "__sum_r__";
+        auto sumVar_g = "__sum_g__";
+        auto sumVar_b = "__sum_b__";
+        auto countVar = "__count__";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
+        auto dxVar = "__dx__";
+        auto dyVar = "__dy__";
+        auto nxVar = "__nx__";
+        auto nyVar = "__ny__";
 
         //temporary image assignment
         auto tempImageAssignment = std::make_unique<AssignExprAST>(
@@ -970,8 +970,8 @@ private:
         auto thresholdExpr = buildExpr(ctx->expr(0));
         auto maxValueExpr = buildExpr(ctx->expr(1));
 
-        auto thresholdStr = "threshold";
-        auto maxValueStr = "maxValue";
+        auto thresholdStr = "__threshold__";
+        auto maxValueStr = "__maxValue__";
 
         auto thresholdAssign = std::make_unique<VarDeclExprAST>(
             (thresholdStr),
@@ -986,8 +986,8 @@ private:
         body.push_back(std::move(thresholdAssign));
         body.push_back(std::move(maxValueAssign));
 
-        auto iVar = "i";
-        auto jVar = "j";
+        auto iVar = "__i__";
+        auto jVar = "__j__";
 
         auto condition = std::make_unique<BinaryExprAST>(
             ">", 
