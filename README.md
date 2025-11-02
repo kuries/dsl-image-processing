@@ -19,3 +19,8 @@ cd build
 ./image-dsl ../test/sample.imgdsl 
 ./image-dsl ../test/sample.imgdsl -mem2reg=true -cse=true
 ./image-dsl ../test/sample.imgdsl -cse=false
+
+#To Run the Functional Tests
+1. ```g++ main.cpp -o test_harness `pkg-config --cflags --libs opencv4```
+2. ```./test_harness {path_to_directory_with_images} {path_to_output_image} {method}```  
+    - Example: ```./test_harness /root/data/samples/images/img-r.jpeg /root/data/samples/images/output.jpg brighten```
